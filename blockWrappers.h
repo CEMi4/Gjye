@@ -20,7 +20,7 @@ protected:
 	
 public: 
 	BlockWrap(std::string = "", EnviroWrap * = NULL);
-	~BlockWrap();
+	virtual ~BlockWrap();
 	void importDataStack(EnviroWrap *);
 	virtual void clearMemoryStack();
 	
@@ -48,7 +48,7 @@ protected:
 	
 public:
 	ClassWrap(std::string = "", EnviroWrap * = NULL);
-	~ClassWrap();
+	virtual ~ClassWrap();
 	void clearMemoryStack();
 	
 };
