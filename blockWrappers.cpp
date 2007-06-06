@@ -44,9 +44,9 @@
 		
 		this->tokenizeBlocks(sovtGroup); // tokenize blocks 
 		
-		// tokenize strings, etc. (only if we haven't already) 
-		if (this->codeInput.find('½') == std::string::npos)
-			create::prepareTokenInput(this->environment, sovtGroup, &this->codeInput);
+		// tokenize strings, etc. (only if we haven't already)   TOKENIZING BLOCKS BREAKS THIS CHECK! 
+		//if (this->codeInput.find('«') == std::string::npos)
+		create::prepareTokenInput(this->environment, sovtGroup, &this->codeInput);
 		
 		std::string fullUserInput = this->codeInput, singleInput = "";
 		
