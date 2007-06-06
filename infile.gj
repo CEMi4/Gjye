@@ -1,0 +1,18 @@
+Print (  ($b = Select 2+1 from ($a = "Saddness" + " biotch!")) + 5/2 + (%vec = [1,2,[3,4,5],6]) + "\n").  
+Print 5 + "\n".  3 + 6.
+
+Print '$a exists? ' + ($a exists) + '\n'.
+Delete $a. 
+Print '$a exists? ' + ($a exists) + '\n'.
+$a = "Saddness" + " biotch!".
+Print '$a contains \'dd\'? ' + ($a contains 'dd') + '\n'.
+Print '$a contains \'g\'? ' + ($a contains 'g') + '\n'.
+
+{
+	{
+		(Local $a) = '$a is different!'.
+		Print "block 2: \$a=$a\n".
+	}
+	
+	Print "block 1: \$a=" + $a + '\n'.
+}
