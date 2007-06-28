@@ -77,7 +77,7 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 			std::string strData = "";
 			int numberEnd;
 			
-			if (input->find_last_of(tokenizers,mIndex) != mIndex-1) continue; // it should be tokenized IMMEDIATELY before the number -- >$<_STRING_>000000 (so we don't swallow variables, tokens, etc) 
+			if (input->find_last_of(tokenizerStarts+" ",mIndex) != mIndex-1) continue; // it should be tokenized IMMEDIATELY before the number -- >$<_STRING_>000000 (so we don't swallow variables, tokens, etc) 
 			
 			numberEnd = input->find_first_not_of(numericalCharsUnsigned,mIndex); // unsigned because we don't want to swallow subtraction 
 			if (numberEnd == std::string::npos) numberEnd = input->length();
@@ -85,7 +85,7 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 			if (numberEnd < input->length() && input->at(numberEnd) == '|') {mIndex = numberEnd;continue;} // don't swallow tokens! 
 			
 			bool hexCheck = (input->substr(mIndex,numberEnd-mIndex+1) == "0x");
-			if (numberEnd < input->length() && (input->at(numberEnd) == 'r' || hexCheck == true)) { // we found a radix definition 
+			if (numberEnd < input->length() && (input->at(numberEnd) == 'r' || hexCheck == true)) { // we found a radix definition (NO DECIMAL PLACES!!  10r10.5 -> 10) 
 				std::string radix;
 				
 				if (hexCheck == true) radix = "16";
@@ -95,6 +95,7 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 				mIndex = numberEnd+1;
 				
 				if (tools::stringToInt(radix) >= 63) {numberEnd = input->find_first_not_of(alphaNumChars+"+/",mIndex);}
+				else if (tools::stringToInt(radix) <= 10) {numberEnd = input->find_first_not_of(numberChars,mIndex);}
 				else {numberEnd = input->find_first_not_of(alphaNumChars,mIndex);}
 				
 				std::string number = input->substr(mIndex,numberEnd-mIndex);
