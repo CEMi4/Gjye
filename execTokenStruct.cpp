@@ -243,13 +243,14 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		
 		
 		
-		// ACTUALLY DO THE OBJECT CREATION HERE //
+		// ACTUALLY DO THE OBJECT CREATION (SET UP) HERE //
 		if (thisObj == NULL && tVecVocab.size() == 0) {
 			
-			if (levelType == "ValueOf" || levelType.at(levelType.length()-1) == '=' || levelType.at(levelType.length()-1) == '*' || levelType.at(levelType.length()-1) == '-' || 
-				levelType.at(levelType.length()-1) == '/' || levelType.at(levelType.length()-1) == '%' || levelType.at(levelType.length()-1) == '+') {
-				thisObj = instantSTDL(&levelType, &postfixFuncData, environment);
-				isOperator = true;
+			if (levelType == "Local" || levelType == "My" || levelType == "ValueOf" || levelType.at(levelType.length()-1) == '=' 
+				|| levelType.at(levelType.length()-1) == '*' || levelType.at(levelType.length()-1) == '-'
+				|| levelType.at(levelType.length()-1) == '/' || levelType.at(levelType.length()-1) == '%' || levelType.at(levelType.length()-1) == '+') {
+					thisObj = instantSTDL(&levelType, &postfixFuncData, environment); // create it immediately (don't bother with matching) 
+					isOperator = true;
 			}
 			
 			sIndex = (catalystCpy.find('^'));
@@ -288,7 +289,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		/// 
 		
 		
-		
+		// build our types vector for this params entry // 
 		if (isOperator == false) {
 			tVecVocab.push_back(levelType);
 			tVecParams.push_back(levelData);
@@ -325,9 +326,10 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				}
 			}
 		}
+		/// 
 		
 		
-		if (thisObj != NULL) 
+		if (thisObj != NULL) {
 			if (thisObj->setLevelData(levelType,levelData)) {
 				if (SHOW_DEBUGGING) std::cout << "PUSHSUC: " << levelType << "() " << thisObj->getLevelData(levelType) <<std::endl; //TMP
 				
@@ -338,7 +340,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				}
 				
 			} else {std::cout << "CRITERROR :: Malformation: Failure to push function " << levelType << "()!" <<std::endl;exit(1);} //TMP
-		
+		}
 		
 		if (thisObj != NULL && levelType == "ValueOf") { // for valueof, purge the object after one loop  (fixes   Select (1),(3)  problem -- we can't chain the valueof method!) 
 			// clean up //
@@ -353,7 +355,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			thisObj = NULL; // because delete doesn't do it for us (it screws us below) 
 		}
 		
-	}
+	} // end while() builder 
 	
 	
 	if (thisObj == NULL && tVecVocab.size() > 0 && tVecTypes.size() > 0) {
