@@ -38,12 +38,17 @@
 		int numberSkipped = 0, vocabLoc = 0, i;
 		
 		for (i = 0; i < vocab.size() && vocabLoc < this->vocabulary.size(); ++vocabLoc) {
-			if (this->vocabulary[vocabLoc].find(vocab[i]) == this->vocabulary[vocabLoc].end() || (this->isOptional[vocabLoc] == false || (this->isOptional[vocabLoc] == true && types.at(i) != "")) && this->paramType.at(vocabLoc) != types.at(i)) { // not matched 
-				if (this->isOptional[vocabLoc] == true) ++numberSkipped;
-				else return -1; // NOT A CANDIDATE 
+			if (this->vocabulary[vocabLoc].find(vocab[i]) == this->vocabulary[vocabLoc].end() 
+				|| (
+					this->isOptional[vocabLoc] == false 
+					|| (this->isOptional[vocabLoc] == true && types.at(i) != "")
+				) 
+				&& this->paramType.at(vocabLoc) != types.at(i)) { // not matched 
+					if (this->isOptional[vocabLoc] == true) ++numberSkipped;
+					else return -1; // NOT A CANDIDATE 
 			} else ++i;
 		}
-		if (i != vocab.size()) numberSkipped = -1; // NOT A CANDIDATE 
+		if (i != vocab.size()) return -1; // NOT A CANDIDATE 
 		
 		return numberSkipped;
 	}

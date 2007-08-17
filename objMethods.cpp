@@ -92,7 +92,7 @@
 	std::string Addition_Obj::executeCode() {
 		std::string returnValue = "", tokenQualifier = "";
 		bool scalarL = false, scalarR = false;
-		VariableStorage * rightVector, * leftVector;
+		VariableStorage * rightVector = NULL, * leftVector = NULL;
 		
 		if (vocab["left"].at(0) == '%') {
 			std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
@@ -181,7 +181,7 @@
 		tempMap["right"] = "";
 		this->vocabulary.push_back( tempMap );
 		tempMap.clear();
-		this->isOptional.push_back(false);		
+		this->isOptional.push_back(false);
 		
 		
 		// 2 DEFINITIONS IN ONE CLASS 
