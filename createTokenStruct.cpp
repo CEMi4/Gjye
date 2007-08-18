@@ -249,17 +249,21 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 	
 	highPrecedenceHandler(tGroup, fullToken); // the highs are handled separately! (because i said so) 
 	
-	std::string operatorsOrdered[3] = {"*/%","+-","="}; // in order of precedence  ... eventually this is ::       "*/%","+-",           "< <= > >=","== !=","and &&","or ||","?:",             "=" 
+	std::string operatorsOrdered[] = {"*/%", "+-", "<>", "!=", "="}; // in order of precedence  ... eventually this is ::       "*/%","+-",           "< <= > >=","== !=","and &&","or ||","?:",             "=" 
 	
-	for (int i = 0; i < 3; ++i) { // the three (so far) orders of precedence 
+	for (int i = 0; i < 5; ++i) { // the five (so far) orders of precedence 
 		
 		std::string tokID;
 		
-		int operatorPivot, forceJump = 0;
-		if (i == 2) forceJump = fullToken->length()-1;
-		while ((operatorPivot = (i == 2?fullToken->find_last_of(operatorsOrdered[i], forceJump):fullToken->find_first_of(operatorsOrdered[i], forceJump))) != std::string::npos) { // lToR vs rToL
+		int operatorPivot, operatorPivot2, forceJump = 0;
+		if (i == 4) forceJump = fullToken->length()-1;
+		while ((operatorPivot = (i == 4?fullToken->find_last_of(operatorsOrdered[i], forceJump):fullToken->find_first_of(operatorsOrdered[i], forceJump))) != std::string::npos) { // lToR vs rToL
 			int beginPos = 0, termPos = 0;
 			
+			if ( i == 3 && fullToken->at(operatorPivot+1) != '=' ) {
+				forceJump = operatorPivot+2;
+				continue;
+			}
 			
 			// grab the left side -- beginPos 
 			int operatorPivotTemp = operatorPivot;
@@ -276,7 +280,6 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			if (beginPos == std::string::npos) beginPos = 0;
 			if (fullToken->at(beginPos) == ' ') ++beginPos; // don't swallow any extra spaces! 
 			
-			
 			if (fullToken->at(operatorPivot) == '%' && operatorPivot+1 < fullToken->length() && (isalpha(fullToken->at(operatorPivot+1)) || fullToken->at(operatorPivot+1) == '_')  ) { // allow for vectors --  %a.  this allows skipping of (false) operators (lToR only) 
 				forceJump=operatorPivot+1;
 				continue;
@@ -290,7 +293,12 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			
 			
 			// grab the right side -- termPos 
-			operatorPivotTemp = operatorPivot;
+			operatorPivot2 = operatorPivot;
+			if ( (fullToken->at(operatorPivot) == '<' || fullToken->at(operatorPivot) == '>' || fullToken->at(operatorPivot) == '!' || fullToken->at(operatorPivot) == '=') 
+				&& operatorPivot+1 < fullToken->length() && fullToken->at(operatorPivot+1) == '=') 
+					++operatorPivot2; // support >= <= != == 
+			
+			operatorPivotTemp = operatorPivot2;
 			if (operatorPivotTemp+1 < fullToken->length() && fullToken->at(operatorPivotTemp+1) == ' ') ++operatorPivotTemp; // allow for trailing spaces, but ignore 
 			
 			if (operatorPivotTemp+1 < fullToken->length() && fullToken->at(operatorPivotTemp+1) == '«') {
@@ -300,7 +308,7 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 				termPos = fullToken->find_first_not_of(validKeyChars,operatorPivotTemp+2); // 2 because operators are not of validKeyChars +1 
 			}
 			else if (operatorPivotTemp+1 < fullToken->length() &&  isalpha(fullToken->at(operatorPivotTemp+1)) ) { // presumably there is a function to the right, so skip it this time 
-				(i == 2 ? forceJump=operatorPivot-1 : forceJump=operatorPivot+1);
+				(i == 4 ? forceJump=operatorPivot-1 : forceJump=operatorPivot+1);
 				continue;
 			}
 			else {std::cout << "CRITERROR :: Malformation: Operator format (right)!" <<std::endl;exit(1); /* ERROR HANDLE */ }
@@ -313,11 +321,17 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			std::string subToken = fullToken->substr(beginPos,termPos-beginPos);
 			
 			// strip out surrounding whitespace //
+			int replSize = 2;
 			std::string rmvRepl = "" + tools::charToString(fullToken->at(operatorPivot));
-			std::string stripMatches[2] = {" " + tools::charToString(fullToken->at(operatorPivot)), tools::charToString(fullToken->at(operatorPivot)) + " "};
-			std::string stripReplaces[2] = {rmvRepl, rmvRepl};
+			std::string rmvRepl2 = "" + tools::charToString(fullToken->at(operatorPivot2));
+			std::string stripMatches[] = {" " + tools::charToString(fullToken->at(operatorPivot)), tools::charToString(fullToken->at(operatorPivot)) + " ", 
+									" " + tools::charToString(fullToken->at(operatorPivot2)), tools::charToString(fullToken->at(operatorPivot2)) + " "};
+			std::string stripReplaces[] = {rmvRepl, rmvRepl, rmvRepl2, rmvRepl2};
 			
-			for (int i = 0; i < 2; ++i) {
+			if (operatorPivot != operatorPivot2) 
+				replSize = 4;
+			
+			for (int i = 0; i < replSize; ++i) {
 				while (subToken.find(stripMatches[i]) != std::string::npos) {
 					subToken.replace(subToken.find(stripMatches[i]), 2, stripReplaces[i]);
 				}

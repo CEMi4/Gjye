@@ -255,6 +255,108 @@
 
 
 // ## //
+//class Compares_Obj : public FuncObj 
+	
+	/* public */ 
+	Compares_Obj::Compares_Obj(DataStorageStack * storage) : FuncObj(storage) {
+		
+		// VERB DECLARATION 
+		std::map<std::string, std::string> tempMap;
+		tempMap["left"] = "";
+		this->vocabulary.push_back( tempMap );
+		tempMap.clear();
+		this->isOptional.push_back(false);
+		
+		// 2ND PARAMETER 
+		tempMap["right"] = "";
+		this->vocabulary.push_back( tempMap );
+		tempMap.clear();
+		this->isOptional.push_back(false);
+		
+		
+		// 1 DEFINITION
+		this->returnType.push_back("$");
+		
+		// PARTYPE DEF #1
+		std::vector<std::string> tempVec;
+		tempVec.push_back("$"); // LEFT
+		tempVec.push_back("$"); // RIGHT
+			this->paramType.push_back(tempVec);
+		tempVec.clear();
+		
+		
+		vocab["left"] = "";
+		vocab["right"] = "";
+	}
+	
+	std::string Compares_Obj::executeCode() {
+		std::string returnValue = "";
+		bool scalarL = false, scalarR = false;
+		int type = -1, skipAmt = 1;
+		
+		if ( vocab["left"].at(vocab["left"].length()-1) == '>' ) type = 0;
+		else if ( vocab["left"].at(vocab["left"].length()-1) == '<' ) type = 1;
+		else if ( vocab["left"].at(vocab["left"].length()-2) == '>' ) {type = 2;skipAmt = 2;}
+		else if ( vocab["left"].at(vocab["left"].length()-2) == '<' ) {type = 3;skipAmt = 2;}
+		else if ( vocab["left"].at(vocab["left"].length()-2) == '=' && vocab["left"].at(vocab["left"].length()-1) == '=' ) {type = 4;skipAmt = 2;}
+		else if ( vocab["left"].at(vocab["left"].length()-2) == '!' && vocab["left"].at(vocab["left"].length()-1) == '=' ) {type = 5;skipAmt = 2;}
+		else {std::cout << "ERROR :: Compares: Unknown type!" <<std::endl;exit(1);}
+		
+		if (vocab["left"].at(0) == '%') {
+			std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-(skipAmt+1));
+			VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
+			varDataL = tools::prepareVectorData(dataStructure, varDataL);
+			if (leftVector->type(varDataL) == 0) {scalarL = true;}
+		}
+		
+		if (vocab["right"].at(0) == '%') {
+			std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
+			VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
+			varDataR = tools::prepareVectorData(dataStructure, varDataR);
+			if (rightVector->type(varDataR) == 0) {scalarR = true;}
+		}
+		
+		if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // compare (SCALAR)
+			std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-skipAmt));
+			std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+			
+			if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
+				double doubleDataL,doubleDataR;
+				doubleDataL =  tools::stringToInt(varDataL);
+				doubleDataR =  tools::stringToInt(varDataR);
+				
+				if ( doubleDataL > doubleDataR ) {
+					if ( type == 0 || type == 2 || type == 5 ) returnValue = "1";
+					else returnValue = "0";
+				}
+				else if ( doubleDataL < doubleDataR ) {
+					if ( type == 0 || type == 2 || type == 4 ) returnValue = "0";
+					else returnValue = "1";
+				}
+				else { // == 
+					if ( type == 2 || type == 3 || type == 4 ) returnValue = "1";
+					else returnValue = "0";
+				}
+				
+			} else {std::cout << "WARNING :: Compares: Unknown Operation (NaN)!" <<std::endl;}
+			
+		} else {std::cout << "WARNING :: Compares: Unknown Data Type!" <<std::endl;}
+		
+		
+		// turn return string into a variable 
+		std::string tokenQualifier = dataStructure->variableReferencer("_STRING_");
+		dataStructure->addVariable(tokenQualifier,returnValue, -1, true);
+		tokenQualifier.insert(0,"$");
+		
+		return tokenQualifier;
+	}
+/// ### ///
+
+
+
+
+
+// ## //
 //class Division_Obj : public FuncObj 
 	
 	/* public */ 

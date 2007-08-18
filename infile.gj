@@ -1,12 +1,28 @@
 Print (  ($b = Select 2+1 from ($a = "Saddness" + " biotch!")) + 5/2 + (%vec = [1,2,[3,4,5],6]) + "\n").  
 Print 5 + "\n".  3 + 6.
 
-Print '$a exists? ' + ($a exists) + '\n'.
+Print '$a exists? '.
+If ($a exists) 
+	Print '$a exists\n'.
+Else 
+	Print '$a DNE\n'.
 Delete $a. 
-Print '$a exists? ' + ($a exists) + '\n'.
+Print '$a exists? '.
+If ($a exists) 
+	Print '$a exists\n'.
+Else 
+	Print '$a DNE\n'.
+
 $a = "Saddness" + " biotch!".
-Print '$a contains \'dd\'? ' + ($a contains 'dd') + '\n'.
-Print '$a contains \'g\'? ' + ($a contains 'g') + '\n'.
+Print '$a contains \'dd\'? '.
+If ($a contains 'dd') {Print 'yes\n'.}
+Else {Print 'no\n'.}
+
+Print '$a contains \'g\'? '.
+If ($a contains 'g') {Print 'yes\n'.}
+Else {Print 'no\n'.}
+
+
 
 {
 	{
@@ -16,6 +32,8 @@ Print '$a contains \'g\'? ' + ($a contains 'g') + '\n'.
 	
 	Print "block 1: \$a=" + $a + '\n'.
 }
+
+
 
 If ( 1 ) {
 	Print "If (start)\n".
@@ -46,5 +64,5 @@ Else {
 }
 
 If (1) Print 1 + "\n".
-5 + 1.
+Print "Break If segment!\n".
 ElseIf ( 1 ) Print 2.

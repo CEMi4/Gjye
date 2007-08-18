@@ -111,7 +111,14 @@ std::string runVectorStruct(EnviroWrap * environment, TokenGroup * tGroup, std::
 FuncObj * instantSTDL(std::string * objType, std::string * postfixFuncData, EnviroWrap * environment) { // factory class method 
 	if (environment == NULL) environment = new EnviroWrap();
 	
-	if (postfixFuncData != NULL && objType->at(objType->length()-1) == '=') {
+	if ( postfixFuncData != NULL && (objType->at(objType->length()-1) == '>' || objType->at(objType->length()-1) == '<' 
+		|| (objType->at(objType->length()-2) == '>' || objType->at(objType->length()-2) == '<' || objType->at(objType->length()-2) == '=' || objType->at(objType->length()-2) == '!')
+		&& objType->at(objType->length()-1) == '=') ) {
+			*postfixFuncData = *objType;
+			*objType = "right";
+			return new Compares_Obj(&environment->dataStructure);
+	}
+	else if (postfixFuncData != NULL && objType->at(objType->length()-1) == '=') {
 		*postfixFuncData = *objType;
 		*objType = "right";
 		return new Assignation_Obj(&environment->dataStructure);
@@ -232,9 +239,11 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			levelType = tokID.substr(0,oPar+1);
 			levelData = tokID.substr(oPar+1,cPar-oPar-1);
 		}
-		else if (tokID.find_first_of(operators,1) != std::string::npos) { // get the operators (after position 0) 
+		else if (tokID.find_first_of(operators,1) != std::string::npos) { // get the operators (after position 0), should backswallow != 
 			int oPar,cPar;
 			oPar = tokID.find_first_of(operators,1);
+			if ( oPar+1 < tokID.length() && tokID.at(oPar) != '?' && tokID.at(oPar) != ':' && tokID.at(oPar+1) == '=' )
+				++oPar;
 			cPar = tokID.length();
 			levelType = tokID.substr(0,oPar+1);
 			levelData = tokID.substr(oPar+1,cPar-oPar-1);
@@ -277,11 +286,11 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
 				
-				ifReturnValue = tools::prepareVectorData( &environment->dataStructure, runTokenStruct(environment,tGroup,tokIDSub) ); // retrieve expression value 
+				ifReturnValue = tools::prepareVectorData( &environment->dataStructure, runTokenStruct(environment,tGroup,tokIDSub) ); // retrieve expression value -- taints if state 
 				// END GRAB EXPRESSION // 
 				
 				
-				tGroup->insideIfBlock = true; // automatic entrance 
+				tGroup->insideIfBlock = true; // automatic entrance (elseif validated itself earlier) 
 				
 				
 				if (SHOW_DEBUGGING) std::cout << "IN (" << tGroup->insideIfBlock << ") : " << ifReturnValue <<std::endl;
@@ -304,7 +313,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 					tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 					levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
 					
-					TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy 
+					TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy -- don't screw up the if states 
 					if (tokIDSub.at(0) == '«') 
 						runTokenStruct(environment,tGroupCpy,tokIDSub); // execute If/ElseIf block 
 					delete tGroupCpy;
@@ -340,7 +349,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
 				// END HANDLE EXPRESSION // 
 				
-				TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy 
+				TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy  -- don't screw up the if states 
 				if (tokIDSub.at(0) == '«') 
 					runTokenStruct(environment,tGroupCpy,tokIDSub); // execute Else block 
 				delete tGroupCpy;
@@ -358,7 +367,8 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			
 			
 			if (levelType == "Local" || levelType == "My" || levelType == "ValueOf" || levelType.at(levelType.length()-1) == '=' 
-				|| levelType.at(levelType.length()-1) == '*' || levelType.at(levelType.length()-1) == '-'
+				|| levelType.at(levelType.length()-1) == '*' || levelType.at(levelType.length()-1) == '-' || levelType.at(levelType.length()-1) == '<' 
+				|| levelType.at(levelType.length()-1) == '>' 
 				|| levelType.at(levelType.length()-1) == '/' || levelType.at(levelType.length()-1) == '%' || levelType.at(levelType.length()-1) == '+') {
 					thisObj = instantSTDL(&levelType, &postfixFuncData, environment); // create it immediately (don't bother with matching) 
 					isOperator = true;

@@ -62,6 +62,17 @@ public:
 
 
 
+class Compares_Obj : public FuncObj {
+private: 
+	
+public: 
+	Compares_Obj(DataStorageStack * = NULL);
+	std::string executeCode();
+	
+};
+
+
+
 class Division_Obj : public FuncObj {
 private: 
 	
