@@ -26,7 +26,10 @@ If ( 1 ) {
 		If ( 0 ) 
 			Print "If-ElseIf-If\n".
 		ElseIf ( 0 ) {
-			Print "If-ElseIf-Elseif\n".
+			Print "If-ElseIf-ElseIf1\n".
+		}
+		ElseIf ( 0 ) {
+			Print "If-ElseIf-ElseIf2\n".
 		}
 		Else 
 			Print "If-ElseIf-Else\n".

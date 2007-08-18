@@ -257,20 +257,25 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				if ( levelType == "ElseIf" && tGroup->insideIfBlock == false ) {std::cout << "CRITERROR :: Malformation: ElseIf expression not contained within If segment " <<std::endl;exit(1);}
 				if ( levelType == "ElseIf" && tGroup->openIfBlock == false ) continue; // already handled, ignore 
 				
-				
-				// GRAB EXPRESSION //
 				sIndex = (catalystCpy.find('^'));
 				catalystCpy.replace(sIndex,1,"~");
 				
+				
+				// GRAB EXPRESSION //
 				std::string tokIDSub = "", ifReturnValue = "";
 				int sIndexSub = 0, eIndexSub = 0;
 				
-				sIndexSub = (levelData.find('«'));
-				if (sIndexSub != std::string::npos) 
-					eIndexSub = (levelData.find('»',sIndexSub));
-				if (eIndexSub == std::string::npos) {std::cout << "CRITERROR :: Malformation: Token mismatch " <<std::endl;exit(1);}
-				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub+1);
-				levelData.replace(sIndexSub,eIndexSub-sIndexSub+1,"^");
+				if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == ' ') ++sIndexSub; // we allow a space, but ignore it (jump over it) 
+				
+				if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == '«') { // it's a token 
+					eIndexSub = levelData.find('»',sIndexSub)+1; // NOT GREEDY (only take one token) 
+				} 
+				else if (sIndexSub < levelData.length() && (levelData.at(sIndexSub) == '$' || levelData.at(sIndexSub) == '%')) { // it's a variable or vector $/% 
+					eIndexSub = levelData.find_first_not_of(validKeyChars,sIndexSub+1);
+				}
+				
+				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
+				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
 				
 				ifReturnValue = tools::prepareVectorData( &environment->dataStructure, runTokenStruct(environment,tGroup,tokIDSub) ); // retrieve expression value 
 				// END GRAB EXPRESSION // 
@@ -284,14 +289,25 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				// HANDLE EXPR // 
 				if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: If expression " <<std::endl;exit(1);}
 				if ( (int) tools::stringToInt( ifReturnValue ) != 0 ) { // true expression 
-					sIndexSub = (levelData.find('«'));
-					if (sIndexSub != std::string::npos) 
-						eIndexSub = (levelData.find('»',sIndexSub));
-					if (eIndexSub == std::string::npos) {std::cout << "CRITERROR :: Malformation: Token mismatch " <<std::endl;exit(1);}
-					tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub+1);
-					levelData.replace(sIndexSub,eIndexSub-sIndexSub+1,"^");
 					
-					runTokenStruct(environment,tGroup,tokIDSub); // execute If/ElseIf block 
+					sIndexSub = (levelData.find('^') + 1);
+					
+					if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == ' ') ++sIndexSub; // we allow a space, but ignore it (jump over it) 
+					
+					if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == '«') { // it's a token 
+						eIndexSub = levelData.find('»',sIndexSub)+1; // NOT GREEDY (only take one token) 
+					} 
+					else if (sIndexSub < levelData.length() && (levelData.at(sIndexSub) == '$' || levelData.at(sIndexSub) == '%')) { // it's a variable or vector $/% 
+						eIndexSub = levelData.find_first_not_of(validKeyChars,sIndexSub+1);
+					}
+					
+					tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
+					levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
+					
+					TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy 
+					if (tokIDSub.at(0) == '«') 
+						runTokenStruct(environment,tGroupCpy,tokIDSub); // execute If/ElseIf block 
+					delete tGroupCpy;
 					
 					tGroup->openIfBlock = false;
 				}
@@ -306,17 +322,28 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				if ( tGroup->insideIfBlock == false ) {std::cout << "CRITERROR :: Malformation: Else expression not contained within If segment " <<std::endl;exit(1);}
 				if ( tGroup->openIfBlock == false ) continue;
 				
+			
+				// HANDLE EXPRESSION //
 				std::string tokIDSub = "";
 				int sIndexSub = 0, eIndexSub = 0;
 				
-				sIndexSub = (levelData.find('«'));
-				if (sIndexSub != std::string::npos) 
-					eIndexSub = (levelData.find('»',sIndexSub));
-				if (eIndexSub == std::string::npos) {std::cout << "CRITERROR :: Malformation: Token mismatch " <<std::endl;exit(1);}
-				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub+1);
-				levelData.replace(sIndexSub,eIndexSub-sIndexSub+1,"^");
+				if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == ' ') ++sIndexSub; // we allow a space, but ignore it (jump over it) 
 				
-				runTokenStruct(environment,tGroup,tokIDSub); // execute Else block 
+				if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == '«') { // it's a token 
+					eIndexSub = levelData.find('»',sIndexSub)+1; // NOT GREEDY (only take one token) 
+				} 
+				else if (sIndexSub < levelData.length() && (levelData.at(sIndexSub) == '$' || levelData.at(sIndexSub) == '%')) { // it's a variable or vector $/% 
+					eIndexSub = levelData.find_first_not_of(validKeyChars,sIndexSub+1);
+				}
+				
+				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
+				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
+				// END HANDLE EXPRESSION // 
+				
+				TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy 
+				if (tokIDSub.at(0) == '«') 
+					runTokenStruct(environment,tGroupCpy,tokIDSub); // execute Else block 
+				delete tGroupCpy;
 				
 				tGroup->insideIfBlock = false;
 				tGroup->openIfBlock = false;
