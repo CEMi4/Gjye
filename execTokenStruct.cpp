@@ -469,7 +469,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 	} // end while() builder 
 	
 	
-	if (thisObj == NULL && tVecVocab.size() > 0 && tVecTypes.size() > 0) {
+	if (thisObj == NULL && tVecVocab.size() > 0 && tVecTypes.size() > 0) { // build user-def funcs 
 		MethodDefinition * methDef; // do NOT delete! 
 		methDef = environment->methodStructure.findMatch(tVecVocab, tVecTypes);
 		if (methDef != NULL) {
@@ -491,7 +491,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 	}
 	
 	
-	if (thisObj != NULL) {
+	if (thisObj != NULL) { // execute the build funcs only 
 		// clean up //
 		int sIndex=0,eIndex=0;
 		sIndex = (catalystCpy.find('~'));
@@ -501,7 +501,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		///
 		
 		delete thisObj;
-	}
+	} // otherwise it could've been a block, if-else, etc 
 	
 	
 	if (SHOW_DEBUGGING) std::cout << " OUTPUT (catcopy): " << catalystCpy <<std::endl; //TMP
