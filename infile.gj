@@ -16,3 +16,32 @@ Print '$a contains \'g\'? ' + ($a contains 'g') + '\n'.
 	
 	Print "block 1: \$a=" + $a + '\n'.
 }
+
+If ( 1 ) {
+	Print "If (start)\n".
+	
+	If ( 0 ) 
+		Print "If-If\n".
+	ElseIf ( 1 ) {
+		If ( 0 ) 
+			Print "If-ElseIf-If\n".
+		ElseIf ( 0 ) {
+			Print "If-ElseIf-Elseif\n".
+		}
+		Else 
+			Print "If-ElseIf-Else\n".
+	}
+	Else 
+		Print "If-Else\n".
+	
+	Print "If (end)\n".
+}
+ElseIf ( 0 ) 
+	Print "ElseIf\n".
+Else {
+	Print "Else\n".
+}
+
+If (1) Print 1 + "\n".
+5 + 1.
+ElseIf ( 1 ) Print 2.

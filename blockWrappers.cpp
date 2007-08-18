@@ -44,7 +44,7 @@
 		TokenGroup * sovtGroup = new TokenGroup, 
 			* tGroup = NULL;
 		
-		this->tokenizeBlocks(sovtGroup); // tokenize blocks 
+		this->tokenizeBlocks(sovtGroup); // tokenize blocks (now so we don't have token overlap in blocks later) 
 		
 		create::prepareTokenInput(this->environment, sovtGroup, &this->codeInput);
 		
@@ -54,7 +54,7 @@
 		int eIndex;
 		while (fullUserInput != "") { // exec each command given 
 			eIndex = -1;
-			do{
+			do {
 				eIndex = fullUserInput.find('.', eIndex+1);
 			} while (eIndex > -1 && eIndex+1 < fullUserInput.length() && isdigit(fullUserInput.at(eIndex+1)) > 0 && fullUserInput.at(eIndex+1) != '«');
 			if (eIndex == std::string::npos) {eIndex = fullUserInput.length()-1;}
@@ -80,10 +80,15 @@
 				}
 				
 				singleInput = "";
+				
+				// blindly update If states 
+				sovtGroup->openIfBlock = tGroup->openIfBlock;
+				sovtGroup->insideIfBlock = tGroup->insideIfBlock;
+				
+				if (tGroup != NULL) {delete tGroup;}
 			}
 		}
 		
-		if (tGroup != NULL) {delete tGroup;}
 		delete sovtGroup;
 		
 		return "";

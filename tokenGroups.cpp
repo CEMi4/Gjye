@@ -24,12 +24,16 @@
 	
 	/* public */
 	TokenGroup::TokenGroup() {
-		currLevel = 0;
-		token.push_back(*new TokenLevel); // set up the zeroth one 
+		this->currLevel = 0;
+		this->insideIfBlock = false;
+		this->openIfBlock = false;
+		this->token.push_back(*new TokenLevel); // set up the zeroth one 
 	}
 	
 	TokenGroup::TokenGroup(TokenGroup * tg) {
 		this->token = tg->token;
+		this->insideIfBlock = tg->insideIfBlock;
+		this->openIfBlock = tg->openIfBlock;
 		this->currLevel = tg->currLevel;
 		this->catalyst = tg->catalyst;
 	}

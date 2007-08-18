@@ -23,6 +23,7 @@ private:
 	
 public:
 	std::string catalyst;
+	bool insideIfBlock, openIfBlock;
 	
 	TokenGroup();
 	TokenGroup(TokenGroup *);

@@ -164,6 +164,7 @@ FuncObj * instantSTDL(std::string * objType, std::string * postfixFuncData, Envi
 	else return new Void_Obj(&environment->dataStructure);
 }
 
+
 std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::string catalyst) { // driver ... internal tracking is of the form    ~ ^ ^ 
 	if (catalyst == "-1") {catalyst = tGroup->catalyst;}
 	std::string catalystCpy = ""; catalystCpy = catalyst;
@@ -177,11 +178,13 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		int sIndex = 0, eIndex = 0, tokArry[2];
 		
 		sIndex = (catalystCpy.find('«'));
-		eIndex = (catalystCpy.find('»',sIndex));
+		if (sIndex != std::string::npos) 
+			eIndex = (catalystCpy.find('»',sIndex));
+		if (eIndex == std::string::npos) {std::cout << "CRITERROR :: Malformation: Token mismatch " <<std::endl;exit(1);}
 		tokID = catalystCpy.substr(sIndex,eIndex-sIndex+1);
 		catalystCpy.replace(sIndex,eIndex-sIndex+1,"^");
 		
-		if (parseTokID(tokID,tokArry) == false) {break;}
+		if (parseTokID(tokID,tokArry) == false) {std::cout << "ERROR :: Token miss " <<std::endl;break;} // token miss! 
 		tokID = tGroup->getData(tokArry[0],tokArry[1]);
 		
 		
@@ -245,6 +248,87 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		
 		// ACTUALLY DO THE OBJECT CREATION (SET UP) HERE //
 		if (thisObj == NULL && tVecVocab.size() == 0) {
+			
+			
+			// IF HANDLER //
+			if ( levelType == "If" || levelType == "ElseIf" ) {
+				if (SHOW_DEBUGGING) std::cout << "IF BLOCK: " << levelData <<std::endl;
+				
+				if ( levelType == "ElseIf" && tGroup->insideIfBlock == false ) {std::cout << "CRITERROR :: Malformation: ElseIf expression not contained within If segment " <<std::endl;exit(1);}
+				if ( levelType == "ElseIf" && tGroup->openIfBlock == false ) continue; // already handled, ignore 
+				
+				
+				// GRAB EXPRESSION //
+				sIndex = (catalystCpy.find('^'));
+				catalystCpy.replace(sIndex,1,"~");
+				
+				std::string tokIDSub = "", ifReturnValue = "";
+				int sIndexSub = 0, eIndexSub = 0;
+				
+				sIndexSub = (levelData.find('«'));
+				if (sIndexSub != std::string::npos) 
+					eIndexSub = (levelData.find('»',sIndexSub));
+				if (eIndexSub == std::string::npos) {std::cout << "CRITERROR :: Malformation: Token mismatch " <<std::endl;exit(1);}
+				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub+1);
+				levelData.replace(sIndexSub,eIndexSub-sIndexSub+1,"^");
+				
+				ifReturnValue = tools::prepareVectorData( &environment->dataStructure, runTokenStruct(environment,tGroup,tokIDSub) ); // retrieve expression value 
+				// END GRAB EXPRESSION // 
+				
+				
+				tGroup->insideIfBlock = true; // automatic entrance 
+				
+				
+				if (SHOW_DEBUGGING) std::cout << "IN (" << tGroup->insideIfBlock << ") : " << ifReturnValue <<std::endl;
+				
+				// HANDLE EXPR // 
+				if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: If expression " <<std::endl;exit(1);}
+				if ( (int) tools::stringToInt( ifReturnValue ) != 0 ) { // true expression 
+					sIndexSub = (levelData.find('«'));
+					if (sIndexSub != std::string::npos) 
+						eIndexSub = (levelData.find('»',sIndexSub));
+					if (eIndexSub == std::string::npos) {std::cout << "CRITERROR :: Malformation: Token mismatch " <<std::endl;exit(1);}
+					tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub+1);
+					levelData.replace(sIndexSub,eIndexSub-sIndexSub+1,"^");
+					
+					runTokenStruct(environment,tGroup,tokIDSub); // execute If/ElseIf block 
+					
+					tGroup->openIfBlock = false;
+				}
+				else { // false expression 
+					tGroup->openIfBlock = true;
+				}
+				// END HANDLE EXPR // 
+				
+				continue;
+			}
+			else if ( levelType == "Else" ) {
+				if ( tGroup->insideIfBlock == false ) {std::cout << "CRITERROR :: Malformation: Else expression not contained within If segment " <<std::endl;exit(1);}
+				if ( tGroup->openIfBlock == false ) continue;
+				
+				std::string tokIDSub = "";
+				int sIndexSub = 0, eIndexSub = 0;
+				
+				sIndexSub = (levelData.find('«'));
+				if (sIndexSub != std::string::npos) 
+					eIndexSub = (levelData.find('»',sIndexSub));
+				if (eIndexSub == std::string::npos) {std::cout << "CRITERROR :: Malformation: Token mismatch " <<std::endl;exit(1);}
+				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub+1);
+				levelData.replace(sIndexSub,eIndexSub-sIndexSub+1,"^");
+				
+				runTokenStruct(environment,tGroup,tokIDSub); // execute Else block 
+				
+				tGroup->insideIfBlock = false;
+				tGroup->openIfBlock = false;
+				continue;
+			}
+			else if ( tGroup->insideIfBlock == true ) {
+				tGroup->insideIfBlock = false; // implicit close 
+				tGroup->openIfBlock = false;
+			}
+			// END IF HANDLING //
+			
+			
 			
 			if (levelType == "Local" || levelType == "My" || levelType == "ValueOf" || levelType.at(levelType.length()-1) == '=' 
 				|| levelType.at(levelType.length()-1) == '*' || levelType.at(levelType.length()-1) == '-'

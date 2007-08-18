@@ -73,11 +73,11 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 	//// 
 	
 	for (int mIndex = 0; mIndex < input->length(); ++mIndex) { // strip out all numbers, replacing as vars 
-		if (isdigit(input->at(mIndex)) > 0 || input->at(mIndex) == '.') { // numbers (to vars) -- leap forward 
+		if (isdigit(input->at(mIndex)) > 0) { // numbers (to vars) -- leap forward  ---  || input->at(mIndex) == '.' removed bc we MUST have #.# and not .# 
 			std::string strData = "";
 			int numberEnd;
 			
-			if (input->find_last_of(tokenizerStarts+" ",mIndex) != mIndex-1) continue; // it should be tokenized IMMEDIATELY before the number -- >$<_STRING_>000000 (so we don't swallow variables, tokens, etc) 
+			if (input->find_last_of(tokenizerStarts+" .",mIndex) != mIndex-1) continue; // it should be tokenized IMMEDIATELY before the number -- >$<_STRING_>000000 (so we don't swallow variables, tokens, etc) 
 			
 			numberEnd = input->find_first_not_of(numericalCharsUnsigned,mIndex); // unsigned because we don't want to swallow subtraction 
 			if (numberEnd == std::string::npos) numberEnd = input->length();
@@ -191,7 +191,7 @@ void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenize
 				
 				if (endFunc+1 < fullToken->length() && fullToken->at(endFunc+1) == ' ') ++endFunc; // we allow a space, but ignore it (jump over it) 
 				
-				if (endFunc+1 < fullToken->length() && fullToken->at(endFunc+1) == '«') { // it's a token 
+				if (endFunc+1 < fullToken->length() && fullToken->at(endFunc+1) == '«' || fullToken->at(endFunc) == '«') { // it's a token 
 					endFunc = fullToken->find('»',endFunc+1)+1; // NOT GREEDY (only take one token) 
 				} 
 				else if (endFunc+1 < fullToken->length() && (fullToken->at(endFunc+1) == '$' || fullToken->at(endFunc+1) == '%')) { // it's a variable or vector $/% 
