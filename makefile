@@ -1,6 +1,7 @@
 # makefile for Gjye++ 
 # the existence of windres implicitly assumes we're compiling on windows 
 
+SHELL = /bin/sh
 
 OBJS = blockWrappers.o createTokenStruct.o execTokenStruct.o miscTools.o objMethods.o tokenGroups.o varStorage.o methodStorage.o enviroWrap.o
 CXX = g++ -Os
@@ -9,9 +10,9 @@ CXXFLAGS = $(CDEBUG) -Wall -Wno-sign-compare -pedantic-errors
 
 
 # windres test #
-WRTEST = $(shell windres --version)
+WRTEST = $(shell windres -h)
 
-ifeq (,$(findstring not, $(WRTEST)))
+ifeq (rc,$(findstring rc,$(WRTEST)))
 	RES = gjye_private.res
 	OUT = gjye.exe
 else
@@ -66,7 +67,6 @@ endif
 .PHONY: clean
 clean:
 	-rm $(OBJS) $(RES) $(OUT)
-
 
 
 # END OF MAKE FILE 
