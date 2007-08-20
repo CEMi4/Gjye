@@ -1,41 +1,72 @@
 # makefile for Gjye++ 
+# the existence of windres implicitly assumes we're compiling on windows 
 
-gjye : gjye++.cpp gjye++.h blockWrappers.o createTokenStruct.o execTokenStruct.o miscTools.o objMethods.o tokenGroups.o varStorage.o methodStorage.o enviroWrap.o #gjye_private.res
-	g++ -O3 -Wall -Wno-sign-compare -pedantic -o gjye gjye++.cpp blockWrappers.o createTokenStruct.o execTokenStruct.o miscTools.o objMethods.o tokenGroups.o varStorage.o methodStorage.o enviroWrap.o #gjye_private.res
+
+OBJS = blockWrappers.o createTokenStruct.o execTokenStruct.o miscTools.o objMethods.o tokenGroups.o varStorage.o methodStorage.o enviroWrap.o
+CXX = g++ -Os
+CDEBUG = -g
+CXXFLAGS = $(CDEBUG) -Wall -Wno-sign-compare -pedantic-errors
+
+
+# windres test #
+WRTEST = $(shell windres --version)
+
+ifeq (,$(findstring not, $(WRTEST)))
+	RES = gjye_private.res
+	OUT = gjye.exe
+else
+	RES = 
+	OUT = gjye
+endif
+##
+
+
+.PHONY: all
+all: $(OUT)
+
+$(OUT): gjye++.cpp gjye++.h $(OBJS) $(RES)
+	-rm $(OUT)
+	$(CXX) $(CXXFLAGS) -o $(OUT) gjye++.cpp $(OBJS) $(RES)
 
 blockWrappers.o: blockWrappers.cpp blockWrappers.h
-	g++ -O3 -Wall -Wno-sign-compare -pedantic -c blockWrappers.cpp
+	$(CXX) $(CXXFLAGS) -c blockWrappers.cpp
 
 createTokenStruct.o: createTokenStruct.cpp createTokenStruct.h
-	g++ -O3 -Wall -Wno-sign-compare -pedantic -c createTokenStruct.cpp
+	$(CXX) $(CXXFLAGS) -c createTokenStruct.cpp
 
 execTokenStruct.o: execTokenStruct.cpp execTokenStruct.h
-	g++ -O3 -Wall -Wno-sign-compare -pedantic -c execTokenStruct.cpp
+	$(CXX) $(CXXFLAGS) -c execTokenStruct.cpp
 
 miscTools.o: miscTools.cpp miscTools.h
-	g++ -O3 -Wall -Wno-sign-compare -pedantic -c miscTools.cpp
+	$(CXX) $(CXXFLAGS) -c miscTools.cpp
 
 objMethods.o: objMethods.cpp objMethods.h
-	g++ -O3 -Wall -Wno-sign-compare -pedantic -c objMethods.cpp
+	$(CXX) $(CXXFLAGS) -c objMethods.cpp
 
 tokenGroups.o: tokenGroups.cpp tokenGroups.h
-	g++ -O3 -Wall -Wno-sign-compare -pedantic -c tokenGroups.cpp
+	$(CXX) $(CXXFLAGS) -c tokenGroups.cpp
 
 varStorage.o: varStorage.cpp varStorage.h
-	g++ -O3 -Wall -Wno-sign-compare -pedantic -c varStorage.cpp
+	$(CXX) $(CXXFLAGS) -c varStorage.cpp
 
 methodStorage.o: methodStorage.cpp methodStorage.h
-	g++ -O3 -Wall -Wno-sign-compare -pedantic -c methodStorage.cpp
+	$(CXX) $(CXXFLAGS) -c methodStorage.cpp
 
 enviroWrap.o: enviroWrap.cpp enviroWrap.h
-	g++ -O3 -Wall -Wno-sign-compare -pedantic -c enviroWrap.cpp
+	$(CXX) $(CXXFLAGS) -c enviroWrap.cpp
+
 
 # windows icon 
-#gjye_private.res: gjye_private.rc 
-#	windres -i gjye_private.rc --input-format=rc -o gjye_private.res -O coff 
+ifdef RES
+$(RES): gjye_private.rc 
+	windres -i gjye_private.rc --input-format=rc -o $(RES) -O coff 
+endif
 
+
+.PHONY: clean
 clean:
-	rm *.o # *.res
+	-rm $(OBJS) $(RES) $(OUT)
+
+
 
 # END OF MAKE FILE 
-
