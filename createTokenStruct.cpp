@@ -185,21 +185,22 @@ void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenize
 			
 			std::string tokID = "", funcName = fullToken->substr(startFunc,endFunc-startFunc+1);
 			
-			int grabTokenCount = (funcName == "If" || funcName == "ElseIf" ? 2 : 1);
+			int grabTokenCount = (funcName == "If" || funcName == "ElseIf" ? 2 : 1); // only If and ElseIf take 2 tokens 
 			
 			do { // grab the term to the right of the function (and keep grabbing if there's a comma (eg  Func $a, $b  =>   Func($a, $b)  ) 
 				
 				if (endFunc+1 < fullToken->length() && fullToken->at(endFunc+1) == ' ') ++endFunc; // we allow a space, but ignore it (jump over it) 
 				
 				if (endFunc+1 < fullToken->length() && fullToken->at(endFunc+1) == '«' || fullToken->at(endFunc) == '«') { // it's a token 
-					endFunc = fullToken->find('»',endFunc+1)+1; // NOT GREEDY (only take one token) 
+					endFunc = fullToken->find('»',endFunc+1); // NOT GREEDY (only take one token) 
+					if (endFunc == std::string::npos) {std::cout << "CRITERROR :: Malformation: Function format (no end-of-token found)!" <<std::endl;exit(1);}
+					++endFunc; // include the » (for the subtraction later) 
 				} 
 				else if (endFunc+1 < fullToken->length() && (fullToken->at(endFunc+1) == '$' || fullToken->at(endFunc+1) == '%')) { // it's a variable or vector $/% 
 					endFunc = fullToken->find_first_not_of(validKeyChars,endFunc+3); // 3 because we have func $var (with a space) 
 				}
 				else { // no parameter(s) given 
 					++endFunc;
-					//cout << "CRITERROR :: Malformation: Function format!" <<endl;exit(1); /* ERROR HANDLE */ 
 				}
 				
 				--grabTokenCount;
@@ -209,12 +210,16 @@ void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenize
 			
 			
 			std::string subToken= fullToken->substr(startFunc,endFunc-startFunc);
+			if (subToken.length() <= 0) {
+					continue;
+					endFunc = fullToken->find_last_of(validKeyChars, startFunc-1);
+			}
 			
 			tokID = "«" + tGroup->setData(subToken) + "»";
 			
 			fullToken->replace(startFunc,endFunc-startFunc,tokID);
 			
-			if (SHOW_DEBUGGING) std::cout << "functionHandler:: level " << tokID << ": " << subToken << " (startFunc: " << startFunc << ") (endFunc: " << endFunc << ") :: tName" <<std::endl;; //TMP
+			if (SHOW_DEBUGGING) std::cout << "functionHandler:: level " << tokID << ": " << subToken << " (startFunc: " << startFunc << ") (endFunc: " << endFunc << ") :: tName" <<std::endl; //TMP
 			
 			endFunc = fullToken->find_last_of(validKeyChars, startFunc-1);
 			

@@ -191,9 +191,10 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		tokID = catalystCpy.substr(sIndex,eIndex-sIndex+1);
 		catalystCpy.replace(sIndex,eIndex-sIndex+1,"^");
 		
-		if (parseTokID(tokID,tokArry) == false) {std::cout << "ERROR :: Token miss " <<std::endl;break;} // token miss! 
+		if (parseTokID(tokID,tokArry) == false) {std::cout << "ERROR :: Token miss: " << tokID <<std::endl;break;} // token miss! 
 		tokID = tGroup->getData(tokArry[0],tokArry[1]);
 		
+		if (tokID.length() <= 0) {std::cout << "ERROR: Empty token: " << tokArry[0] << "|" << tokArry[1] <<std::endl;exit(1);} // the token has nothing in it!! 
 		
 		if (tokID.at(0) == '{' && tokID.at(tokID.length()-1) == '}') { // catch generic block declarations 
 			std::string blockData = tokID.substr(1,tokID.length()-2); // look ma, no braces! 

@@ -3,11 +3,10 @@
 
 SHELL = /bin/sh
 
-OBJS = blockWrappers.o createTokenStruct.o execTokenStruct.o miscTools.o objMethods.o tokenGroups.o varStorage.o methodStorage.o enviroWrap.o
+OBJS = objs/blockWrappers.o objs/createTokenStruct.o objs/execTokenStruct.o objs/miscTools.o objs/objMethods.o objs/tokenGroups.o objs/varStorage.o objs/methodStorage.o objs/enviroWrap.o
 CXX = g++ -Os
 CDEBUG = -g
 CXXFLAGS = $(CDEBUG) -Wall -Wno-sign-compare -pedantic-errors
-
 
 # windres test #
 WRTEST = $(shell windres -h)
@@ -22,46 +21,58 @@ endif
 ##
 
 
+
+
 .PHONY: all
-all: $(OUT)
+all: setup $(OUT)
+
+# make sure the objs folder is there
+setup: 
+ifdef RES
+	-if not exist objs mkdir objs
+	-if exist $(OUT) rm $(OUT)
+else
+	-if test ! -d objs; then mkdir objs; fi
+	-if test -e $(OUT); then -rm $(OUT); fi
+endif
 
 $(OUT): gjye++.cpp gjye++.h $(OBJS) $(RES)
-	-rm $(OUT)
 	$(CXX) $(CXXFLAGS) -o $(OUT) gjye++.cpp $(OBJS) $(RES)
 
-blockWrappers.o: blockWrappers.cpp blockWrappers.h
-	$(CXX) $(CXXFLAGS) -c blockWrappers.cpp
+objs/blockWrappers.o: blockWrappers.cpp blockWrappers.h
+	$(CXX) $(CXXFLAGS) -c blockWrappers.cpp -o objs/blockWrappers.o
 
-createTokenStruct.o: createTokenStruct.cpp createTokenStruct.h
-	$(CXX) $(CXXFLAGS) -c createTokenStruct.cpp
+objs/createTokenStruct.o: createTokenStruct.cpp createTokenStruct.h
+	$(CXX) $(CXXFLAGS) -c createTokenStruct.cpp -o objs/createTokenStruct.o
 
-execTokenStruct.o: execTokenStruct.cpp execTokenStruct.h
-	$(CXX) $(CXXFLAGS) -c execTokenStruct.cpp
+objs/execTokenStruct.o: execTokenStruct.cpp execTokenStruct.h
+	$(CXX) $(CXXFLAGS) -c execTokenStruct.cpp -o objs/execTokenStruct.o
 
-miscTools.o: miscTools.cpp miscTools.h
-	$(CXX) $(CXXFLAGS) -c miscTools.cpp
+objs/miscTools.o: miscTools.cpp miscTools.h
+	$(CXX) $(CXXFLAGS) -c miscTools.cpp -o objs/miscTools.o
 
-objMethods.o: objMethods.cpp objMethods.h
-	$(CXX) $(CXXFLAGS) -c objMethods.cpp
+objs/objMethods.o: objMethods.cpp objMethods.h
+	$(CXX) $(CXXFLAGS) -c objMethods.cpp -o objs/objMethods.o
 
-tokenGroups.o: tokenGroups.cpp tokenGroups.h
-	$(CXX) $(CXXFLAGS) -c tokenGroups.cpp
+objs/tokenGroups.o: tokenGroups.cpp tokenGroups.h
+	$(CXX) $(CXXFLAGS) -c tokenGroups.cpp -o objs/tokenGroups.o
 
-varStorage.o: varStorage.cpp varStorage.h
-	$(CXX) $(CXXFLAGS) -c varStorage.cpp
+objs/varStorage.o: varStorage.cpp varStorage.h
+	$(CXX) $(CXXFLAGS) -c varStorage.cpp -o objs/varStorage.o
 
-methodStorage.o: methodStorage.cpp methodStorage.h
-	$(CXX) $(CXXFLAGS) -c methodStorage.cpp
+objs/methodStorage.o: methodStorage.cpp methodStorage.h
+	$(CXX) $(CXXFLAGS) -c methodStorage.cpp -o objs/methodStorage.o
 
-enviroWrap.o: enviroWrap.cpp enviroWrap.h
-	$(CXX) $(CXXFLAGS) -c enviroWrap.cpp
-
+objs/enviroWrap.o: enviroWrap.cpp enviroWrap.h
+	$(CXX) $(CXXFLAGS) -c enviroWrap.cpp -o objs/enviroWrap.o
 
 # windows icon 
 ifdef RES
 $(RES): gjye_private.rc 
 	windres -i gjye_private.rc --input-format=rc -o $(RES) -O coff 
 endif
+
+
 
 
 .PHONY: clean

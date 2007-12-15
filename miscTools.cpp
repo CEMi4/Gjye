@@ -167,6 +167,8 @@ std::string taintEscapes(std::string input) { // replace backslash with escape i
 				case '%': input.replace(mIndex,2,"«{±VECSG}»");break;
 				case '#': input.replace(mIndex,2,"«{±FHLSG}»");break;
 				case '*': input.replace(mIndex,2,"«{±OBJSG}»");break;
+				
+				// below are committed taintings, which never get converted back 
 				case 'n': input.replace(mIndex,2,"\n");break;
 				case 'r': input.replace(mIndex,2,"\r");break;
 				case 't': input.replace(mIndex,2,"\t");break;
