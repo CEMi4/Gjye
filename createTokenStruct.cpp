@@ -187,7 +187,7 @@ void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenize
 			
 			int grabTokenCount = (funcName == "If" || funcName == "ElseIf" ? 2 : 1); // only If and ElseIf take 2 tokens 
 			
-			do { // grab the term to the right of the function (and keep grabbing if there's a comma (eg  Func $a, $b  =>   Func($a, $b)  ) 
+			do { // grab the term to the right of the function (and keep grabbing if there's a comma (eg  Func $a, $b  =>   Func($a, $b)  ) - lists not implemented yet 
 				
 				if (endFunc+1 < fullToken->length() && fullToken->at(endFunc+1) == ' ') ++endFunc; // we allow a space, but ignore it (jump over it) 
 				
@@ -290,7 +290,7 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 				continue;
 			}
 			
-			if ((operatorPivotTemp-beginPos) <= 1 && fullToken->at(operatorPivot) != '-' && fullToken->at(operatorPivot) != '+' || operatorPivot+1 >= fullToken->length()) { // ERROR HANDLE 
+			if ((operatorPivotTemp-beginPos) <= 1 || operatorPivot+1 >= fullToken->length()) { // ERROR HANDLE --  && fullToken->at(operatorPivot) != '-' && fullToken->at(operatorPivot) != '+'   <-- these will be handled as unary 
 				std::cout << "CRITERROR :: Malformation: Operator format (left)!" <<std::endl;
 				exit(1);
 			}

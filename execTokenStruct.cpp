@@ -367,10 +367,12 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			
 			
 			
-			if (levelType == "Local" || levelType == "My" || levelType == "ValueOf" || levelType.at(levelType.length()-1) == '=' 
-				|| levelType.at(levelType.length()-1) == '*' || levelType.at(levelType.length()-1) == '-' || levelType.at(levelType.length()-1) == '<' 
-				|| levelType.at(levelType.length()-1) == '>' 
-				|| levelType.at(levelType.length()-1) == '/' || levelType.at(levelType.length()-1) == '%' || levelType.at(levelType.length()-1) == '+') {
+			if (levelType.length() > 1 && 
+					(levelType == "Local" || levelType == "My" || levelType == "ValueOf" || levelType.at(levelType.length()-1) == '=' 
+					|| levelType.at(levelType.length()-1) == '*' || levelType.at(levelType.length()-1) == '-' || levelType.at(levelType.length()-1) == '<' 
+					|| levelType.at(levelType.length()-1) == '>' 
+					|| levelType.at(levelType.length()-1) == '/' || levelType.at(levelType.length()-1) == '%' || levelType.at(levelType.length()-1) == '+')
+				) {
 					thisObj = instantSTDL(&levelType, &postfixFuncData, environment); // create it immediately (don't bother with matching) 
 					isOperator = true;
 			}

@@ -4,7 +4,7 @@
 SHELL = /bin/sh
 
 OBJS = objs/blockWrappers.o objs/createTokenStruct.o objs/execTokenStruct.o objs/miscTools.o objs/objMethods.o objs/tokenGroups.o objs/varStorage.o objs/methodStorage.o objs/enviroWrap.o
-CXX = g++ -Os
+CXX = g++ -O2
 CDEBUG = -g
 CXXFLAGS = $(CDEBUG) -Wall -Wno-sign-compare -pedantic-errors
 
@@ -27,13 +27,14 @@ endif
 all: setup $(OUT)
 
 # make sure the objs folder is there
+.PHONY: setup
 setup: 
 ifdef RES
-	-if not exist objs mkdir objs
-	-if exist $(OUT) rm $(OUT)
+	if not exist objs mkdir objs
+	if exist $(OUT) rm $(OUT)
 else
-	-if test ! -d objs; then mkdir objs; fi
-	-if test -e $(OUT); then -rm $(OUT); fi
+	if test ! -d objs; then mkdir objs; fi
+	if test -e $(OUT); then rm $(OUT); fi
 endif
 
 $(OUT): gjye++.cpp gjye++.h $(OBJS) $(RES)
