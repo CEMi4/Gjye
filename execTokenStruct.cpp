@@ -69,7 +69,7 @@ std::string runVectorStruct(EnviroWrap * environment, TokenGroup * tGroup, std::
 			// at this point, any assignations inside of a vector will be treated as tree/hash heads!! 
 			
 			
-			//cout << "\ntoken runVectorStruct: " << token; // TMP
+			//std::cout << "\ntoken runVectorStruct: " << token <<std::endl; // TMP
 
 			if (token.find('=',1) != std::string::npos) { // vector declaration (single) 
 				int oPar = token.find('=',1);
@@ -82,12 +82,28 @@ std::string runVectorStruct(EnviroWrap * environment, TokenGroup * tGroup, std::
 				
 			} else {tokenData = token;} // array declaration (single) 
 			
-			headerName = tools::prepareVectorData(&environment->dataStructure, headerName); // give us the values (take out of variable form) 
+			if (headerName != "") 
+				headerName = tools::prepareVectorData(&environment->dataStructure, headerName); // give us the values (take out of variable form) 
 			
-			//cout << "\nname/data runVectorStruct: " << headerName << " is " << tokenData <<endl; // TMP
-
-			if (tokenData.at(0) == '%') { // add a vector to this vector (do we need to do a type check?) 
-				environment->dataStructure.getVector(tokenQualifier)->addVector(    headerName, *environment->dataStructure.getVector(  tokenData.substr(1,tokenData.length() - 1)  )    );
+			//std::cout << "\nname/data runVectorStruct: " << headerName << " is " << tokenData <<std::endl; // TMP
+			
+			if (tokenData.at(0) == '%') { // add a vector/scalar to this vector 
+				VariableStorage * vectorStorage = NULL;
+				
+				std::string tokenDataTmp = tokenData.substr(1,tokenData.length() - 1); // strip the leading % 
+				vectorStorage = environment->dataStructure.vecStringToVector(&tokenDataTmp); // jump to the vector object we want to check (modifies tokenDataTmp to make it the highest level) 
+				tokenDataTmp = tools::prepareVectorData(&environment->dataStructure, tokenDataTmp); // this is the highest level!  ie)  %topName[index][tokenDataTmp];  or  %tokenDataTmp; 
+				
+				if (vectorStorage->type(tokenDataTmp) == 0) { // it's actually a scalar 	
+					tokenData = tools::prepareVectorData(&environment->dataStructure, tokenData); // get the _actual_ value (replace vars, etc.) 
+					environment->dataStructure.getVector(tokenQualifier)->addVariable(headerName, tokenData);
+				}
+				else {
+					vectorStorage = vectorStorage->getVector(tokenDataTmp);
+					environment->dataStructure.getVector(tokenQualifier)->addVector(headerName, *vectorStorage);
+				}
+				
+				
 			}
 			else { // add a variable to this vector 
 				tokenData = tools::prepareVectorData(&environment->dataStructure, tokenData); // get the _actual_ value (replace vars, etc.) 

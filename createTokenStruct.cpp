@@ -63,9 +63,9 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 	
 	
 	// strip out whitespace //
-	std::string stripMatches[] = {"\t","\r","\n","  ", " /", "/ ", " (", "( ", " )", " ,", ", ", " ]", "] ", " {", "{ ", " }", "} "};
-	std::string stripReplaces[] = {"","",""," ", "/", "/", "(", "(", ")",",", ",", "]", "]","{","{","}","}"};
-	for (int i = 0; i < 17; ++i) {
+	std::string stripMatches[] = {"\t","\r","\n","  ", " /", "/ ", " (", "( ", " )", " ,", ", ", " ]", "] ", " {", "{ ", " }", "} ", " [", "[ "};
+	std::string stripReplaces[] = {"","",""," ", "/", "/", "(", "(", ")",",", ",", "]", "]","{","{","}","}","[","["};
+	for (int i = 0; i < 19; ++i) {
 		while (input->find(stripMatches[i]) != std::string::npos) {
 			input->replace(input->find(stripMatches[i]), stripMatches[i].length(), stripReplaces[i]);
 		}
