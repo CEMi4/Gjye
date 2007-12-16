@@ -173,7 +173,7 @@ void blockHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenizes b
 
 
 //################ TOKENIZE FUNCTIONS ################//
-void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenizes function declarations, call prepareTokenInput BEFORE this
+void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenizes function declarations, call prepareTokenInput BEFORE this (quotes are taken into account) 
 	int endFunc = fullToken->find_last_of(validKeyChars), startFunc = 0;
 	
 	while (endFunc != std::string::npos) {
@@ -239,9 +239,93 @@ void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenize
 //################ TOKENIZE HIGHER PRECEDENCIES (called by precedenceHandler) ################//
 void highPrecedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handles level 1 and 2 precedencies ( ++, --, !, ++, --, -, +), call prepareTokenInput BEFORE this
 	// note: the highs only have one operand! 
+	// ALERT: this does not yet work with indices ... %x[1]++  eg ... as they are tokenized!! =S  
 	
+	std::string operatorsOrdered[] = {"+-", "!+-"}; // in order of precedence  ... eventually this is ::       ++/-- (post),      !/++/--/+/- (pre - rToL)
 	
-	
+	for (int i = 0; i < 2; ++i) { // the first two orders of precedence 
+		
+		std::string tokID;
+		
+		int operatorPivot, forceJump = 0;
+		if (i == 1) forceJump = fullToken->length()-1;
+		while ((operatorPivot = (i == 1?fullToken->find_last_of(operatorsOrdered[i], forceJump):fullToken->find_first_of(operatorsOrdered[i], forceJump))) != std::string::npos) { // lToR vs rToL
+			int beginPos = 0, termPos = 0;
+			
+			if ( i == 0 ) { //posts 
+				
+				if ( operatorPivot+1 < fullToken->length() 
+					&& (fullToken->at(operatorPivot) == '+' && fullToken->at(operatorPivot+1) != '+' || fullToken->at(operatorPivot) == '-' && fullToken->at(operatorPivot+1) != '-') 
+					) { // shortcut (don't bother if it's not doubled) 
+						forceJump = operatorPivot+2;
+						continue;
+				}
+				
+				// grab the left side -- beginPos 
+				if (operatorPivot-1 >= 0) {
+					beginPos = fullToken->find_last_not_of(validKeyChars,operatorPivot-1);
+				}
+				
+				if (beginPos == std::string::npos || beginPos != std::string::npos && fullToken->at(beginPos) != '$' && fullToken->at(beginPos) != '%') { // no joy (ONLY $x++ or %x++ allowed) 
+					forceJump = operatorPivot+1;
+					continue;
+				}
+				
+				termPos = operatorPivot+2; // there is no right-hand term (include 2nd operator portion) 
+				
+			} else { // pres 
+				
+				beginPos = operatorPivot;  // there is no left-hand term 
+				bool dblPre = 0; // is it ++ or --? 
+				
+				// grab the right side -- termPos 
+				if ( operatorPivot-1 >= 0
+					&& (fullToken->at(operatorPivot) == '+' && fullToken->at(operatorPivot-1) == '+' || fullToken->at(operatorPivot) == '-' && fullToken->at(operatorPivot-1) == '-') 
+					) {
+						--beginPos; // (include 2nd operator portion) 
+						dblPre = 1;
+				}
+				
+				int operatorPivotTemp = operatorPivot; // operatorPivot2 is trash now 
+				
+				if (operatorPivotTemp+2 < fullToken->length() && (fullToken->at(operatorPivotTemp+1) == '$' || fullToken->at(operatorPivotTemp+1) == '%')) {
+					termPos = fullToken->find_first_not_of(validKeyChars,operatorPivotTemp+2); // 2 because operators are not of validKeyChars +1 
+					
+					if ( dblPre != 1 ) { // make sure we don't steal $x+$y from addition (or subtraction) 
+						int operatorPivot2 = operatorPivot; // reset 
+						if (operatorPivot2-1 >= 0 && fullToken->at(operatorPivot2-1) == ' ') --operatorPivot2; // allow for leading spaces, but ignore
+						
+						int leftSideTmp = (operatorPivot2-1 >= 0) ? fullToken->find_last_not_of(validKeyChars,operatorPivot2-1) : std::string::npos;
+						if (operatorPivot2-1 >= 0 && fullToken->at(operatorPivot2-1) == '»' 
+							|| leftSideTmp != std::string::npos && (fullToken->at(leftSideTmp) == '$' || fullToken->at(leftSideTmp) == '%') 
+							) {
+							forceJump = operatorPivot-1; // note: rToL
+							continue;
+						}
+					}
+					
+				}
+				else {
+					forceJump = operatorPivot-1; // note: rToL
+					continue;
+				}
+				
+				if (termPos == std::string::npos) {termPos = fullToken->length();}
+				if (fullToken->at(termPos-1) == ' ') --termPos; // don't swallow any extra spaces! 
+				
+			}
+			
+			
+			std::string subToken = fullToken->substr(beginPos,termPos-beginPos);
+			
+			tokID = "«" + tGroup->setData(subToken) + "»";
+			
+			fullToken->replace(beginPos,termPos-beginPos,tokID);
+			
+			if (SHOW_DEBUGGING) std::cout << "highPrecedenceHandler:: level " << tokID << ": " << subToken <<std::endl; //TMP
+			
+		}
+	}
 }
 /// ################################ ///
 
