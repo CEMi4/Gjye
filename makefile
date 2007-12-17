@@ -3,7 +3,8 @@
 
 SHELL = /bin/sh
 
-OBJS = objs/blockWrappers.o objs/createTokenStruct.o objs/execTokenStruct.o objs/miscTools.o objs/objMethods.o objs/tokenGroups.o objs/varStorage.o objs/methodStorage.o objs/enviroWrap.o
+OBJS = objs/blockWrappers.o objs/createTokenStruct.o objs/execTokenStruct.o objs/miscTools.o \
+	objs/objMethods.o objs/operMethods.o objs/tokenGroups.o objs/varStorage.o objs/methodStorage.o objs/enviroWrap.o 
 CXX = g++ -O2
 CDEBUG = -g
 CXXFLAGS = $(CDEBUG) -Wall -Wno-sign-compare -pedantic-errors
@@ -54,6 +55,9 @@ objs/miscTools.o: miscTools.cpp miscTools.h
 
 objs/objMethods.o: objMethods.cpp objMethods.h
 	$(CXX) $(CXXFLAGS) -c objMethods.cpp -o objs/objMethods.o
+
+objs/operMethods.o: operMethods.cpp operMethods.h
+	$(CXX) $(CXXFLAGS) -c operMethods.cpp -o objs/operMethods.o
 
 objs/tokenGroups.o: tokenGroups.cpp tokenGroups.h
 	$(CXX) $(CXXFLAGS) -c tokenGroups.cpp -o objs/tokenGroups.o

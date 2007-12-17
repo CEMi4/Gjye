@@ -7,6 +7,7 @@ extern bool SHOW_DEBUGGING;
 #include "varStorage.h"
 #include "tokenGroups.h"
 #include "objMethods.h"
+#include "operMethods.h"
 
 //################ PROTOTYPES ################//
 namespace exec {
