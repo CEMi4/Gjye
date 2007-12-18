@@ -18,6 +18,88 @@
 
 
 
+//################ GENERAL DATATYPE ################//
+// class InternalDataType 
+	
+	/* protected */
+	int InternalDataType::bestType( const std::string testValue ) const {
+			if ( tools::isInteger( testValue ) ) { // int 
+				return 3; 
+			}
+			else if ( tools::isNumber( testValue ) ) { // double 
+				return 4; 
+			}
+			// and the like ... 
+			else {
+				return 0; // string
+			}
+	}
+	
+	/* public */ 
+	InternalDataType::InternalDataType( std::string initValue ) {
+		this->validType = 0; // initially, it's a string 
+		this->stringValue = initValue; // told ya 
+		this->references = 1;
+		
+		int testType = bestType( this->stringValue );
+		
+		if ( testType == 3 ) { // int 
+			this->intValue = (int) tools::stringToInt(this->stringValue);
+			this->validType = 3; 
+		}
+		else if ( testType == 4 ) { // double 
+			this->dblValue = tools::stringToInt(this->stringValue);
+			this->validType = 4; 
+		}
+		// and the like ... 
+		
+	}
+	InternalDataType::~InternalDataType() {} 
+	
+	
+	void InternalDataType::modify( double newValue, bool isDouble ) {
+		if (isDouble) {
+			this->dblValue = newValue;
+			this->validType = 4;  // double 
+		} else {
+			this->intValue = (int) newValue;
+			this->validType = 3;  // int 
+		}
+	}
+	
+	void InternalDataType::modify( std::string newValue ) {
+		
+		int testType = bestType( newValue );
+		
+		if ( testType == 3 ) { // int 
+			this->intValue = (int) tools::stringToInt(this->stringValue);
+			this->validType = 3; 
+		}
+		else if ( testType == 4 ) { // double 
+			this->dblValue = tools::stringToInt(this->stringValue);
+			this->validType = 4; 
+		}
+		else {
+			this->validType = 0; // string 
+			this->stringValue = newValue;
+		}
+		// and the like ... 
+		
+	}
+	
+	
+	int InternalDataType::getType() const {return this->validType;}
+	
+	int InternalDataType::getInt() const {return this->intValue;}
+	double InternalDataType::getDbl() const {return this->dblValue;}
+	std::string InternalDataType::getString() const {return this->stringValue;}
+	
+/// ################################ ///
+
+
+
+
+
 //################ GJYE VARIABLE STORAGE ################//
 // class VariableStorage 
 	

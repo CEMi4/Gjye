@@ -12,6 +12,40 @@ struct strCmp {
 
 
 
+class InternalDataType {
+protected: 
+	std::string stringValue; // value's representation as a string -- 0
+	// note:  1 and 2 are arrays and vectors 
+	int intValue; // as an int -- 3
+	double dblValue; // as a double -- 4 
+	// someday ... complex number -- 5
+	// someday ... ClassWrap -- 6
+	
+	int validType; // which type is currently valid (best effort) 
+	int references; // how many pointers are pointint to you? 
+	
+	int bestType( const std::string ) const;
+	
+public: 
+	InternalDataType(std::string = ""); // default constructor definitely not recommended, but whatever 
+	~InternalDataType();
+	
+	
+	void modify( double, bool = true ); // update it as an integer or double 
+	
+	void modify(std::string); // update the value/object 
+	
+	
+	int getType() const;
+	
+	int getInt() const;
+	double getDbl() const;
+	std::string getString() const;
+	// and the like ... 
+};
+
+
+
 class VariableStorage {
 protected: 
 	std::map<std::string, bool, strCmp> isScalar; // type
