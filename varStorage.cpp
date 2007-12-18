@@ -318,8 +318,11 @@
 	VariableStorage * DataStorageStack::vecStringToVector(std::string * thisName, bool checkBaseExistence, bool returnNullOnNonExistance) {
 		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
 		
+		int lIndex = thisName->find_first_not_of(validKeyChars);
+		if (lIndex == std::string::npos) {lIndex = thisName->length()-1;}
+		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
-			if ((*iter)->variableExists(*thisName)) {return (*iter)->vecStringToVector(thisName, checkBaseExistence, returnNullOnNonExistance);}
+			if ((*iter)->variableExists( thisName->substr(0, lIndex) )) {return (*iter)->vecStringToVector(thisName, checkBaseExistence, returnNullOnNonExistance);}
 		}
 		
 		return (*this->dataStack.rbegin())->vecStringToVector(thisName, checkBaseExistence, returnNullOnNonExistance); // if all else fails, go with the top of the stack (which fails for us!) 

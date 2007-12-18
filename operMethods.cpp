@@ -674,20 +674,13 @@
 	}
 	
 	std::string Unaries_Obj::executeCode() {
-		std::string returnValue = "", unaryType = "";
+		std::string returnValue = "", unaryType = "", varData = "", vecNameCpy = "";
+		VariableStorage * rightVector = NULL;
 		bool scalarR = false;
 		
-		/* unaries on a vector reference are not yet allowed (not tokenized) 
-		if (vocab["right"].at(0) == '%') {
-			std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
-			VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-			varDataR = tools::prepareVectorData(dataStructure, varDataR);
-			if (rightVector->type(varDataR) == 0) {scalarR = true;}
-		}
-		*/
 		
 		if (vocab["right"].length() < 2) 
-			std::cout << "WARNING :: Unary: Malformed Operand!" <<std::endl; // the (right) operand isn't there ... 
+			std::cout << "WARNING :: Unary: Malformed Operand (len)!" <<std::endl; // the (right) operand isn't there ... 
 		else {
 			
 			if (vocab["right"].at(0) == '+' && vocab["right"].at(1) == '+') {
@@ -721,9 +714,16 @@
 			else {std::cout << "WARNING :: Unary: Unknown Operation (NaN)!" <<std::endl;}
 			
 			
+			if (vocab["right"].at(0) == '%') {
+				vecNameCpy = vocab["right"].substr(1,vocab["right"].length()-1);
+				rightVector = dataStructure->vecStringToVector(&vecNameCpy);
+				vecNameCpy = tools::prepareVectorData(dataStructure, vecNameCpy);
+				if (rightVector->type(vecNameCpy) == 0) {scalarR = true;}
+			}
+			
 			if ( unaryType != "" && (vocab["right"].at(0) == '$' || scalarR) ) { 
-				std::string varData = tools::prepareVectorData(dataStructure, vocab["right"]);
-				
+				 varData = tools::prepareVectorData(dataStructure, vocab["right"]);
+				 
 				if ( tools::isNumber(varData) ) {
 					double doubleData;
 					
@@ -763,10 +763,16 @@
 					else {doubleData = 0;} // this shouldn't be possible by now (but compiler will warn us if we don't) 
 					
 					// update value 
-					if ( unaryType != "pos" && unaryType != "neg" && unaryType != "lNot" ) 
-						dataStructure->addVariable( vocab["right"].substr(1,vocab["right"].length()-1), tools::intToString(doubleData) );
+					if ( unaryType != "pos" && unaryType != "neg" && unaryType != "lNot" ) {
+						
+						if (scalarR)  // vector 
+							 rightVector->addVariable( vecNameCpy, tools::intToString(doubleData) );
+						else 
+							dataStructure->addVariable( vocab["right"].substr(1,vocab["right"].length()-1), tools::intToString(doubleData) );
+						
+					}
 					
-				} else {std::cout << "WARNING :: Unary: Unknown Data Type!" <<std::endl;}
+				} else {std::cout << "WARNING :: Unary: Unknown Data Value Type!" <<std::endl;}
 				
 			} else {std::cout << "WARNING :: Unary: Unknown Data Type!" <<std::endl;}
 		}

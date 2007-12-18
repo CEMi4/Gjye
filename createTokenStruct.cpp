@@ -212,7 +212,7 @@ void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenize
 			std::string subToken= fullToken->substr(startFunc,endFunc-startFunc);
 			if (subToken.length() <= 0) {
 					continue;
-					endFunc = fullToken->find_last_of(validKeyChars, startFunc-1);
+					//endFunc = fullToken->find_last_of(validKeyChars, startFunc-1);
 			}
 			
 			tokID = "«" + tGroup->setData(subToken) + "»";
@@ -262,11 +262,15 @@ void highPrecedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // ha
 				}
 				
 				// grab the left side -- beginPos 
-				if (operatorPivot-1 >= 0) {
+				if (operatorPivot-1 >= 0 && fullToken->at(operatorPivot-1) == '»') {
+					beginPos = fullToken->find_last_not_of(validTokenChars,operatorPivot-1)+1; // token (hopefully %vec[]) 
+					if (beginPos == std::string::npos) beginPos = 0;
+				} 
+				else if (operatorPivot-1 >= 0) {
 					beginPos = fullToken->find_last_not_of(validKeyChars,operatorPivot-1);
 				}
 				
-				if (beginPos == std::string::npos || beginPos != std::string::npos && fullToken->at(beginPos) != '$' && fullToken->at(beginPos) != '%') { // no joy (ONLY $x++ or %x++ allowed) 
+				if (beginPos == std::string::npos) { //  || beginPos != std::string::npos && fullToken->at(beginPos) != '$' && fullToken->at(beginPos) != '%'
 					forceJump = operatorPivot+1;
 					continue;
 				}
@@ -286,21 +290,21 @@ void highPrecedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // ha
 						dblPre = 1;
 				}
 				
-				int operatorPivotTemp = operatorPivot; // operatorPivot2 is trash now 
+				int operatorPivotTemp = operatorPivot; 
 				
 				if (operatorPivotTemp+2 < fullToken->length() && (fullToken->at(operatorPivotTemp+1) == '$' || fullToken->at(operatorPivotTemp+1) == '%')) {
 					termPos = fullToken->find_first_not_of(validKeyChars,operatorPivotTemp+2); // 2 because operators are not of validKeyChars +1 
 					
 					if ( dblPre != 1 ) { // make sure we don't steal $x+$y from addition (or subtraction) 
-						int operatorPivot2 = operatorPivot; // reset 
+						int operatorPivot2 = operatorPivot; 
 						if (operatorPivot2-1 >= 0 && fullToken->at(operatorPivot2-1) == ' ') --operatorPivot2; // allow for leading spaces, but ignore
 						
 						int leftSideTmp = (operatorPivot2-1 >= 0) ? fullToken->find_last_not_of(validKeyChars,operatorPivot2-1) : std::string::npos;
 						if (operatorPivot2-1 >= 0 && fullToken->at(operatorPivot2-1) == '»' 
 							|| leftSideTmp != std::string::npos && (fullToken->at(leftSideTmp) == '$' || fullToken->at(leftSideTmp) == '%') 
 							) {
-							forceJump = operatorPivot-1; // note: rToL
-							continue;
+								forceJump = operatorPivot-1; // note: rToL
+								continue;
 						}
 					}
 					
@@ -396,7 +400,7 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			else if (operatorPivotTemp+2 < fullToken->length() && (fullToken->at(operatorPivotTemp+1) == '$' || fullToken->at(operatorPivotTemp+1) == '%')) {
 				termPos = fullToken->find_first_not_of(validKeyChars,operatorPivotTemp+2); // 2 because operators are not of validKeyChars +1 
 			}
-			else if (operatorPivotTemp+1 < fullToken->length() &&  isalpha(fullToken->at(operatorPivotTemp+1)) ) { // presumably there is a function to the right, so skip it this time 
+			else if (operatorPivotTemp+1 < fullToken->length() && isalpha(fullToken->at(operatorPivotTemp+1)) ) { // presumably there is a function to the right, so skip it this time 
 				(i == 4 ? forceJump=operatorPivot-1 : forceJump=operatorPivot+1);
 				continue;
 			}
@@ -485,7 +489,7 @@ void createTokenStruct(std::string input, TokenGroup * tGroup) { // one line at 
 			int lOccur = lBrac; // the beginning of our block
 			if (lOccur > 0 && isalnum(input.at(lOccur-1))) { 
 				lOccur = input.find_last_not_of(validKeyChars,lOccur-1); // find the REAL beginning >%vec[1][2][3] 
-				std::cout << input << " : " << lOccur <<std::endl;
+				//std::cout << input << " : " << lOccur <<std::endl;
 			}
 			
 			std::string fullToken = input.substr(lOccur,mIndex-lOccur+1);
