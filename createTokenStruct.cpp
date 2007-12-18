@@ -263,14 +263,13 @@ void highPrecedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // ha
 				
 				// grab the left side -- beginPos 
 				if (operatorPivot-1 >= 0 && fullToken->at(operatorPivot-1) == '»') {
-					beginPos = fullToken->find_last_not_of(validTokenChars,operatorPivot-1)+1; // token (hopefully %vec[]) 
-					if (beginPos == std::string::npos) beginPos = 0;
+					beginPos = fullToken->rfind('«', operatorPivot-1); // token (not greedy) (hopefully %vec[]) 
 				} 
-				else if (operatorPivot-1 >= 0) {
+				else if (operatorPivot-1 >= 0) { // not very specific ... 
 					beginPos = fullToken->find_last_not_of(validKeyChars,operatorPivot-1);
 				}
 				
-				if (beginPos == std::string::npos) { //  || beginPos != std::string::npos && fullToken->at(beginPos) != '$' && fullToken->at(beginPos) != '%'
+				if (beginPos == std::string::npos || fullToken->at(beginPos) != '$' && fullToken->at(beginPos) != '«') { // only these are allowed (otherwise we steal from prefixes) 
 					forceJump = operatorPivot+1;
 					continue;
 				}
@@ -292,27 +291,31 @@ void highPrecedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // ha
 				
 				int operatorPivotTemp = operatorPivot; 
 				
-				if (operatorPivotTemp+2 < fullToken->length() && (fullToken->at(operatorPivotTemp+1) == '$' || fullToken->at(operatorPivotTemp+1) == '%')) {
+				if (operatorPivotTemp+2 < fullToken->length() && fullToken->at(operatorPivotTemp+1) == '$') {
 					termPos = fullToken->find_first_not_of(validKeyChars,operatorPivotTemp+2); // 2 because operators are not of validKeyChars +1 
-					
-					if ( dblPre != 1 ) { // make sure we don't steal $x+$y from addition (or subtraction) 
-						int operatorPivot2 = operatorPivot; 
-						if (operatorPivot2-1 >= 0 && fullToken->at(operatorPivot2-1) == ' ') --operatorPivot2; // allow for leading spaces, but ignore
-						
-						int leftSideTmp = (operatorPivot2-1 >= 0) ? fullToken->find_last_not_of(validKeyChars,operatorPivot2-1) : std::string::npos;
-						if (operatorPivot2-1 >= 0 && fullToken->at(operatorPivot2-1) == '»' 
-							|| leftSideTmp != std::string::npos && (fullToken->at(leftSideTmp) == '$' || fullToken->at(leftSideTmp) == '%') 
-							) {
-								forceJump = operatorPivot-1; // note: rToL
-								continue;
-						}
-					}
-					
 				}
+				else if (operatorPivotTemp+1 < fullToken->length() && fullToken->at(operatorPivotTemp+1) == '«') {
+					termPos = fullToken->find_first_of("»",operatorPivotTemp+1)+1; // token (not greedy) +1 
+				} 
 				else {
 					forceJump = operatorPivot-1; // note: rToL
 					continue;
 				}
+				
+				
+				if ( dblPre != 1 ) { // make sure we don't steal $x+$y from addition (or subtraction) 
+					int operatorPivot2 = operatorPivot; 
+					if (operatorPivot2-1 >= 0 && fullToken->at(operatorPivot2-1) == ' ') --operatorPivot2; // allow for leading spaces, but ignore
+
+					int leftSideTmp = (operatorPivot2-1 >= 0) ? fullToken->find_last_not_of(validKeyChars,operatorPivot2-1) : std::string::npos;
+					if (operatorPivot2-1 >= 0 && fullToken->at(operatorPivot2-1) == '»' 
+						|| leftSideTmp != std::string::npos && (fullToken->at(leftSideTmp) == '$' || fullToken->at(leftSideTmp) == '%') 
+						) {
+							forceJump = operatorPivot-1; // note: rToL
+							continue;
+					}
+				}
+				
 				
 				if (termPos == std::string::npos) {termPos = fullToken->length();}
 				if (fullToken->at(termPos-1) == ' ') --termPos; // don't swallow any extra spaces! 
