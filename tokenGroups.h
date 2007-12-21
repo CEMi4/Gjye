@@ -26,12 +26,12 @@ public:
 	bool insideIfBlock, openIfBlock;
 	
 	TokenGroup();
-	TokenGroup(TokenGroup *);
+	TokenGroup(const TokenGroup *);
 	
-	int isSealed(int);
+	int isSealed(int) const;
 	bool seal(int);
 	std::string setData(std::string);
-	std::string getData(int, int);
+	std::string getData(int, int) const;
 	
 };
 /// ################################ ///

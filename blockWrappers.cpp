@@ -14,7 +14,7 @@
 // class BlockWrap 
 
 	/* public */ 
-	BlockWrap::BlockWrap(std::string code, EnviroWrap * dStack) {
+	BlockWrap::BlockWrap(std::string code, const EnviroWrap * dStack) {
 		this->codeInput = code;
 		
 		if (dStack == NULL) {this->environment = new EnviroWrap();}
@@ -104,7 +104,7 @@
 // class MethodWrap : public BlockWrap 
 	
 	/* public */
-	MethodWrap::MethodWrap(std::string code, EnviroWrap * dStack) : BlockWrap(code, dStack) {
+	MethodWrap::MethodWrap(std::string code, const EnviroWrap * dStack) : BlockWrap(code, dStack) {
 		//this->isSTDL = false;
 		//dataStructure = new DataStorageStack(-1);
 	}
@@ -119,7 +119,7 @@
 // class ClassWrap : public MethodWrap 
 	
 	/* public */
-	ClassWrap::ClassWrap(std::string code, EnviroWrap * dStack) : MethodWrap(code, dStack) {
+	ClassWrap::ClassWrap(std::string code, const EnviroWrap * dStack) : MethodWrap(code, dStack) {
 		this->methods = new MethodStack();
 		this->methods->pushStorage();
 	}

@@ -507,7 +507,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 
 
 	if (thisObj == NULL && tVecVocab.size() > 0 && tVecTypes.size() > 0) { // build user-def funcs
-		MethodDefinition * methDef; // do NOT delete!
+		const MethodDefinition * methDef; // do NOT delete!
 		methDef = environment->methodStructure.findMatch(tVecVocab, tVecTypes);
 		if (methDef != NULL) {
 			//methDef->toString();

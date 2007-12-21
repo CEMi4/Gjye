@@ -8,14 +8,14 @@
 // class EnviroWrap 
 	
 	/* public */ 
-	EnviroWrap::EnviroWrap(DataStorageStack * dss, MethodStack * ms) {
+	EnviroWrap::EnviroWrap(const DataStorageStack * dss, const MethodStack * ms) {
 		if (dss == NULL) this-> dataStructure = *(new DataStorageStack);
 		else this-> dataStructure = *dss;
 		
 		if (ms == NULL) this->methodStructure = *(new MethodStack);
 		else this->methodStructure = *ms;
 	}
-	EnviroWrap::EnviroWrap(EnviroWrap * eStack) { // clone 
+	EnviroWrap::EnviroWrap(const EnviroWrap * eStack) { // clone 
 		this->dataStructure = *(new DataStorageStack(eStack->dataStructure));
 		this->methodStructure = *(new MethodStack(eStack->methodStructure));
 	}

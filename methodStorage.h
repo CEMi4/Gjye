@@ -19,8 +19,8 @@ public:
 	MethodDefinition(std::string, std::string, std::vector< std::map<std::string, std::string> >, std::vector<std::string>, std::vector<bool>, bool = false, bool = false);
 	~MethodDefinition();
 
-	void toString();
-	int calculateMatch(std::vector<std::string>, std::vector<std::string>);
+	void toString() const;
+	int calculateMatch(std::vector<std::string>, std::vector<std::string>) const;
 	
 };
 
@@ -34,14 +34,14 @@ public:
 	~MethodStorage();
 	void clearMemory();
 	
-	bool methodExists(std::string);
-	MethodDefinition * getMethod(std::string);
-	bool isSTDL(std::string);
+	bool methodExists(std::string) const;
+	const MethodDefinition * getMethod(std::string);
+	bool isSTDL(std::string) const;
 	void addMethod(std::string, std::string, std::vector< std::map<std::string, std::string> >, std::vector<std::string>, std::vector<bool>, bool = false, bool = false);
 
-	void toString();
-	MethodDefinition * findMatch(std::vector<std::string>, std::vector<std::string>);
-	bool isPostFixFunc(std::string);
+	void toString() const;
+	const MethodDefinition * findMatch(std::vector<std::string>, std::vector<std::string>) const;
+	bool isPostFixFunc(std::string) const;
 	
 };
 
@@ -52,23 +52,23 @@ protected:
 	
 public:
 	MethodStack();
-	MethodStack(MethodStack *);
+	MethodStack(const MethodStack *);
 	~MethodStack();
 	void clearMemory();
 	void pop();
 	
-	bool methodExists(std::string);
-	MethodDefinition * getMethod(std::string);
-	bool isSTDL(std::string);
+	bool methodExists(std::string) const;
+	const MethodDefinition * getMethod(std::string);
+	bool isSTDL(std::string) const;
 	void addMethod(std::string, std::string, std::vector< std::map<std::string, std::string> >, std::vector<std::string>, std::vector<bool>, bool = false, bool = false);
 	
 	void pushStorage(MethodStorage * = NULL);
 	
-	void toString();
-	MethodDefinition * findMatch(std::vector<std::string>, std::vector<std::string>);
-	bool isPostFixFunc(std::string);
+	void toString() const;
+	const MethodDefinition * findMatch(std::vector<std::string>, std::vector<std::string>) const;
+	bool isPostFixFunc(std::string) const;
 	
-	int stackSize() {return this->methodStack.size();}
+	int stackSize() const;
 	
 };
 /// ################################ ///

@@ -38,7 +38,7 @@
 		this->dataValue = initValue;
 		this->references = 1; // someone cares about you 
 	}
-	InternalDataType::InternalDataType(InternalDataType * idt) { // clone 
+	InternalDataType::InternalDataType(const InternalDataType * idt) { // clone 
 		this->validType = idt->validType;
 		this->references = idt->references;
 		if ( idt->dataValue != NULL ) {
@@ -105,10 +105,10 @@
 	
 	/* public */ 
 	VariableStorage::VariableStorage(int aaIdx) {this->startVariableReference = 0;this->arrayAutoIndex = aaIdx;}
-	VariableStorage::VariableStorage(VariableStorage * vSto) { // clone (deep) 
+	VariableStorage::VariableStorage(const VariableStorage * vSto) { // clone (deep) 
 		std::map<std::string, InternalDataType *>::const_iterator iter;
 		for (iter = vSto->dataNames.begin(); iter != vSto->dataNames.end(); ++iter) {
-			this->dataNames[iter->first] = new InternalDataType( vSto->dataNames[iter->first] );
+			this->dataNames[iter->first] = new InternalDataType( iter->second );
 			//if (vSto->dataNames[iter->first] != NULL && vSto->dataNames[iter->first]->getType() == 0)
 				//std::cout << "CLONED: " << iter->first << "::" << *( (std::string *) this->dataNames[iter->first]->getValue() ) << "::" << this->dataNames[iter->first]->getType() <<std::endl;
 		}
@@ -140,7 +140,7 @@
 	}
 	
 	
-	bool VariableStorage::addVector(std::string thisName, VariableStorage & vector, int insPos) { // use getVector first to jump to the level!   Dumps an entire vector into this namespace 
+	bool VariableStorage::addVector(std::string thisName, const VariableStorage & vector, int insPos) { // use getVector first to jump to the level!   Dumps an entire vector into this namespace 
 		if (this->arrayAutoIndex >= 0 && (thisName == "" || tools::isInteger(thisName))) { // arrays 
 			if (thisName == "" && insPos < 0) {
 				thisName = tools::intToString(this->arrayAutoIndex);
@@ -266,7 +266,7 @@
 	}
 	
 	
-	std::string VariableStorage::getData(std::string thisName) { // use getVector first to jump to the level! 
+	std::string VariableStorage::getData(std::string thisName) const { // use getVector first to jump to the level! 
 		if (this->variableExists(thisName) == true) {
 			if (this->dataNames.find(thisName)->second->getType() == 0) {return *( (std::string *) this->dataNames.find(thisName)->second->getValue());} // variable 
 			else if ( (this->dataNames.find(thisName)->second->getType() & 3) != 0) {
@@ -283,13 +283,13 @@
 	}
 	
 	
-	std::string VariableStorage::dumpData() { // for developmental purposes 
+	std::string VariableStorage::dumpData() const { // for developmental purposes 
 		std::string buffer = "";
 		std::map<std::string, InternalDataType *>::const_iterator iter;
 		for (iter = this->dataNames.begin(); iter != this->dataNames.end(); ++iter) {
-			std::string arrayPrint = "";if (this->dataNames[iter->first]->getType() == 1) {arrayPrint = "*";}
-			if (this->dataNames[iter->first]->getType() == 0) {buffer += "" + iter->first + "=" + *( (std::string *) this->dataNames[iter->first]->getValue() ) + ",";}
-			else if ( (this->dataNames[iter->first]->getType() & 3) != 0) {buffer += "" + iter->first + arrayPrint + " :: [" + ( (VariableStorage *) this->dataNames[iter->first]->getValue() )->dumpData() + "],";}
+			std::string arrayPrint = "";if (iter->second->getType() == 1) {arrayPrint = "*";}
+			if (iter->second->getType() == 0) {buffer += "" + iter->first + "=" + *( (std::string *) iter->second->getValue() ) + ",";}
+			else if ( (iter->second->getType() & 3) != 0) {buffer += "" + iter->first + arrayPrint + " :: [" + ( (VariableStorage *) iter->second->getValue() )->dumpData() + "],";}
 			else {} // not string or array/vector  
 		}
 		return buffer;
@@ -301,7 +301,7 @@
 	}
 	
 	
-	int VariableStorage::type(std::string thisName) {
+	int VariableStorage::type(std::string thisName) const {
 		if (thisName == "") {return (this->arrayAutoIndex >= 0 ? 1 : 2);} // *this can't be a scalar! 
 		
 		if (this->variableExists(thisName)) {
@@ -313,7 +313,7 @@
 	}
 	
 	
-	std::string VariableStorage::typeString(std::string thisName) {
+	std::string VariableStorage::typeString(std::string thisName) const {
 		int retType = this->type(thisName);
 		if (retType > 0) return "%";
 		else if (retType == 0) return "$";
@@ -321,7 +321,7 @@
 	}
 	
 	
-	bool VariableStorage::variableExists(std::string thisName) {
+	bool VariableStorage::variableExists(std::string thisName) const {
 		if (thisName == "") return false;
 		
 		if (this->dataNames.count(thisName) == 1) {return true;}
@@ -341,7 +341,7 @@
 	DataStorageStack::DataStorageStack(VariableStorage * vStore) {
 		this->pushStorage(vStore);
 	}
-	DataStorageStack::DataStorageStack(DataStorageStack * dStack) { // clone 
+	DataStorageStack::DataStorageStack(const DataStorageStack * dStack) { // clone 
 		this->dataStack = dStack->dataStack;
 	}
 	DataStorageStack::~DataStorageStack() {}
@@ -362,7 +362,7 @@
 	}
 	
 	
-	bool DataStorageStack::addVector(std::string thisName, VariableStorage & vector, int insPos, bool instantiate) {
+	bool DataStorageStack::addVector(std::string thisName, const VariableStorage & vector, int insPos, bool instantiate) {
 		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
 		
 		if (instantiate == true) {return (*iter)->addVector(thisName, vector, insPos);} // if we're instantiating, then we want the top of the stack 
@@ -425,8 +425,8 @@
 	}
 	
 	
-	std::string DataStorageStack::getData(std::string thisName) {
-		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
+	std::string DataStorageStack::getData(std::string thisName) const {
+		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
 		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
 			if ((*iter)->variableExists(thisName)) {return (*iter)->getData(thisName);}
@@ -441,18 +441,18 @@
 	}
 	
 	
-	std::string DataStorageStack::dumpData() {
+	std::string DataStorageStack::dumpData() const {
 		return (*this->dataStack.rbegin())->dumpData(); // dump the top of the stack only 
 	}
 	
 	
-	int DataStorageStack::size() {
+	int DataStorageStack::size() const {
 		return (*this->dataStack.rbegin())->size(); // top of the stack 
 	}
 	
 	
-	int DataStorageStack::type(std::string thisName) {
-		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
+	int DataStorageStack::type(std::string thisName) const {
+		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
 		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
 			if ((*iter)->variableExists(thisName)) {return (*iter)->type(thisName);}
@@ -462,8 +462,8 @@
 	}
 	
 	
-	std::string DataStorageStack::typeString(std::string thisName) {
-		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
+	std::string DataStorageStack::typeString(std::string thisName) const {
+		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
 		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
 			if ((*iter)->variableExists(thisName)) {return (*iter)->typeString(thisName);}
@@ -473,8 +473,8 @@
 	}
 	
 	
-	bool DataStorageStack::variableExists(std::string thisName) {
-		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
+	bool DataStorageStack::variableExists(std::string thisName) const {
+		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
 		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
 			if ((*iter)->variableExists(thisName)) {return true;}

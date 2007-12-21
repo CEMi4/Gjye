@@ -13,8 +13,8 @@ public:
 	DataStorageStack dataStructure; // declare (locally) global variable storage object
 	MethodStack methodStructure; 
 	
-	EnviroWrap(DataStorageStack * dss = NULL, MethodStack * ms = NULL);
-	EnviroWrap(EnviroWrap * eStack);
+	EnviroWrap(const DataStorageStack * dss = NULL, const MethodStack * ms = NULL);
+	EnviroWrap(const EnviroWrap * eStack);
 	~EnviroWrap();
 	void clearMemoryStacks();
 	

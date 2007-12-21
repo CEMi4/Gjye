@@ -19,7 +19,7 @@ protected:
 	EnviroWrap * environment; // declare (locally) global variable storage object
 	
 public: 
-	BlockWrap(std::string = "", EnviroWrap * = NULL);
+	BlockWrap(std::string = "", const EnviroWrap * = NULL);
 	virtual ~BlockWrap();
 	void importDataStack(EnviroWrap *);
 	virtual void clearMemoryStack();
@@ -35,7 +35,7 @@ class MethodWrap : public BlockWrap {
 protected: 
 	
 public:
-	MethodWrap(std::string = "", EnviroWrap * = NULL);
+	MethodWrap(std::string = "", const EnviroWrap * = NULL);
 	
 };
 
@@ -47,7 +47,7 @@ protected:
 	std::vector<std::string> friends; // who has access to my shizz 
 	
 public:
-	ClassWrap(std::string = "", EnviroWrap * = NULL);
+	ClassWrap(std::string = "", const EnviroWrap * = NULL);
 	virtual ~ClassWrap();
 	void clearMemoryStack();
 	

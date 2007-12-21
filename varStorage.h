@@ -32,7 +32,7 @@ protected:
 	
 public: 
 	InternalDataType( void *, int );
-	InternalDataType(InternalDataType *);
+	InternalDataType(const InternalDataType *);
 	~InternalDataType();
 	
 	
@@ -61,12 +61,12 @@ protected:
 	
 public: 
 	VariableStorage(int = 0);
-	VariableStorage(VariableStorage *);
+	VariableStorage(const VariableStorage *);
 	~VariableStorage();
 	
 	std::string variableReferencer(std::string) const;
 	
-	bool addVector(std::string, VariableStorage &, int = -1);
+	bool addVector(std::string, const VariableStorage &, int = -1);
 	bool addVariable(std::string = "", std::string = "", int = -1);
 	
 	VariableStorage * getVector(std::string);
@@ -74,14 +74,14 @@ public:
 	
 	bool removeVariable(std::string);
 	
-	std::string getData(std::string);
+	std::string getData(std::string) const;
 	std::map<std::string, InternalDataType *, strCmp> * getVectorNodes();
-	std::string dumpData();
+	std::string dumpData() const;
 	
 	int size() const;
-	int type(std::string = "");
-	std::string typeString(std::string = "");
-	bool variableExists(std::string);
+	int type(std::string = "") const;
+	std::string typeString(std::string = "") const;
+	bool variableExists(std::string) const;
 };
 
 
@@ -93,14 +93,14 @@ protected:
 public: 
 	DataStorageStack();
 	DataStorageStack(VariableStorage *);
-	DataStorageStack(DataStorageStack *);
+	DataStorageStack(const DataStorageStack *);
 	~DataStorageStack();
 	void clearMemory();
 	void pop(); // pop and destroy the top of the stack 
 	
 	std::string variableReferencer(std::string);
 	
-	bool addVector(std::string, VariableStorage &, int = -1, bool = false);
+	bool addVector(std::string, const VariableStorage &, int = -1, bool = false);
 	bool addVariable(std::string = "", std::string = "", int = -1, bool = false);
 	
 	
@@ -109,14 +109,14 @@ public:
 	
 	bool removeVariable(std::string);
 	
-	std::string getData(std::string);
+	std::string getData(std::string) const;
 	std::map<std::string, InternalDataType *, strCmp> * getVectorNodes();
-	std::string dumpData();
+	std::string dumpData() const;
 	
-	int size();
-	int type(std::string = "");
-	std::string typeString(std::string = "");
-	bool variableExists(std::string);
+	int size() const;
+	int type(std::string = "") const;
+	std::string typeString(std::string = "") const;
+	bool variableExists(std::string) const;
 	
 	void pushStorage(VariableStorage * = NULL);
 	

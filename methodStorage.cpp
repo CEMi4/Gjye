@@ -25,7 +25,7 @@
 	}
 	
 	
-	void MethodDefinition::toString() {
+	void MethodDefinition::toString() const {
 		if (this->isPostFixFunc == true) std::cout << "* ";
 		
 		for (int i = 0; i < this->vocabulary.size() && vocabulary.at(i).size() > 0; ++i) 
@@ -34,7 +34,7 @@
 	}
 	
 	
-	int MethodDefinition::calculateMatch(std::vector<std::string> vocab, std::vector<std::string> types) {
+	int MethodDefinition::calculateMatch(std::vector<std::string> vocab, std::vector<std::string> types) const {
 		int numberSkipped = 0, vocabLoc = 0, i;
 		
 		for (i = 0; i < vocab.size() && vocabLoc < this->vocabulary.size(); ++vocabLoc) {
@@ -72,8 +72,8 @@
 	}
 	
 	
-	bool MethodStorage::methodExists(std::string mName) {
-		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::iterator oIter = this->methods.begin();
+	bool MethodStorage::methodExists(std::string mName) const {
+		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::const_iterator oIter = this->methods.begin();
 		
 		for (; oIter != this->methods.end(); ++oIter) {
 			if ((oIter->first).count(mName) > 0) return true;
@@ -82,7 +82,7 @@
 	}
 	
 	
-	MethodDefinition * MethodStorage::getMethod(std::string mName) {
+	const MethodDefinition * MethodStorage::getMethod(std::string mName) {
 		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::iterator oIter = this->methods.begin();
 		
 		for (; oIter != this->methods.end(); ++oIter) {
@@ -92,8 +92,8 @@
 	}
 	
 	
-	bool MethodStorage::isSTDL(std::string mName) {
-		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::iterator oIter = this->methods.begin();
+	bool MethodStorage::isSTDL(std::string mName) const {
+		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::const_iterator oIter = this->methods.begin();
 		
 		for (; oIter != this->methods.end(); ++oIter) {
 			if ((oIter->first).find(mName) != (oIter->first).end()) return (oIter->second)->isSTDL;
@@ -108,16 +108,16 @@
 	}
 	
 	
-	void MethodStorage::toString() {
-		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::iterator oIter = this->methods.begin();
+	void MethodStorage::toString() const {
+		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::const_iterator oIter = this->methods.begin();
 		for (; oIter != this->methods.end(); ++oIter) {
 			(oIter->second)->toString();
 		}
 	}
 	
 	
-	MethodDefinition * MethodStorage::findMatch(std::vector<std::string> vocab, std::vector<std::string> types) {
-		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::iterator oIter = this->methods.begin();
+	const MethodDefinition * MethodStorage::findMatch(std::vector<std::string> vocab, std::vector<std::string> types) const {
+		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::const_iterator oIter = this->methods.begin();
 		std::multimap<int, MethodDefinition *> numberSkipped;
 		
 		// determine match quality of all contained methods 
@@ -153,8 +153,8 @@
 	}
 	
 	
-	bool MethodStorage::isPostFixFunc(std::string mName) {
-		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::iterator oIter = this->methods.begin();
+	bool MethodStorage::isPostFixFunc(std::string mName) const {
+		std::multimap<std::map<std::string, std::string>, MethodDefinition *>::const_iterator oIter = this->methods.begin();
 		
 		for (; oIter != this->methods.end(); ++oIter) {
 			if ((oIter->first).find(mName) != (oIter->first).end()) return (oIter->second)->isPostFixFunc;
@@ -175,7 +175,7 @@
 	MethodStack::MethodStack() {
 		this->methodStack.push_back(new MethodStorage);
 	}
-	MethodStack::MethodStack(MethodStack * mStack) { // clone 
+	MethodStack::MethodStack(const MethodStack * mStack) { // clone 
 		this->methodStack = mStack->methodStack;
 	}
 	MethodStack::~MethodStack() {}
@@ -190,8 +190,8 @@
 		this->methodStack.pop_back(); // remove  
 	}
 	
-	bool MethodStack::methodExists(std::string mName) {
-		std::vector<MethodStorage *>::reverse_iterator iter = this->methodStack.rbegin();
+	bool MethodStack::methodExists(std::string mName) const {
+		std::vector<MethodStorage *>::const_reverse_iterator iter = this->methodStack.rbegin();
 		
 		for (; iter != this->methodStack.rend(); ++iter) {	// find the first (highest) declaration of the method 
 			if ((*iter)->methodExists(mName)) {return true;}
@@ -201,7 +201,7 @@
 	}
 	
 	
-	MethodDefinition * MethodStack::getMethod(std::string mName) {
+	const MethodDefinition * MethodStack::getMethod(std::string mName) {
 		std::vector<MethodStorage *>::reverse_iterator iter = this->methodStack.rbegin();
 		
 		for (; iter != this->methodStack.rend(); ++iter) { // find the first (highest) declaration of the method 
@@ -212,8 +212,8 @@
 	}
 	
 	
-	bool MethodStack::isSTDL(std::string mName) {
-		std::vector<MethodStorage *>::reverse_iterator iter = this->methodStack.rbegin();
+	bool MethodStack::isSTDL(std::string mName) const {
+		std::vector<MethodStorage *>::const_reverse_iterator iter = this->methodStack.rbegin();
 		
 		for (; iter != this->methodStack.rend(); ++iter) { // find the first (highest) declaration of the method 
 			if ((*iter)->methodExists(mName)) {return (*iter)->isSTDL(mName);}
@@ -235,17 +235,17 @@
 	}
 	
 	
-	void MethodStack::toString() {
-		std::vector<MethodStorage *>::reverse_iterator iter = this->methodStack.rbegin();
+	void MethodStack::toString() const {
+		std::vector<MethodStorage *>::const_reverse_iterator iter = this->methodStack.rbegin();
 		for (; iter != this->methodStack.rend(); ++iter) {
 			(*iter)->toString();
 		}
 	}
 	
 	
-	MethodDefinition * MethodStack::findMatch(std::vector<std::string> vocab, std::vector<std::string> types) {
-		MethodDefinition * temp = NULL;
-		std::vector<MethodStorage *>::reverse_iterator iter = this->methodStack.rbegin();
+	const MethodDefinition * MethodStack::findMatch(std::vector<std::string> vocab, std::vector<std::string> types) const {
+		const MethodDefinition * temp = NULL;
+		std::vector<MethodStorage *>::const_reverse_iterator iter = this->methodStack.rbegin();
 		for (; iter != this->methodStack.rend(); ++iter) {
 			temp = (*iter)->findMatch(vocab, types);
 			if (temp != NULL) return temp;
@@ -254,13 +254,16 @@
 		return temp;
 	}
 	
-	bool MethodStack::isPostFixFunc(std::string mName) {
-		std::vector<MethodStorage *>::reverse_iterator iter = this->methodStack.rbegin();
+	bool MethodStack::isPostFixFunc(std::string mName) const {
+		std::vector<MethodStorage *>::const_reverse_iterator iter = this->methodStack.rbegin();
 		for (; iter != this->methodStack.rend(); ++iter) { // find the first (highest) declaration of the method 
 			if ((*iter)->methodExists(mName)) {return (*iter)->isPostFixFunc(mName);}
 		}
 		
 		return false;
 	}
+
+
+	int MethodStack::stackSize() const {return this->methodStack.size();}
 	
 /// ### ///

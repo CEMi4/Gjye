@@ -30,7 +30,7 @@
 		this->token.push_back(*new TokenLevel); // set up the zeroth one 
 	}
 	
-	TokenGroup::TokenGroup(TokenGroup * tg) {
+	TokenGroup::TokenGroup(const TokenGroup * tg) {
 		this->token = tg->token;
 		this->insideIfBlock = tg->insideIfBlock;
 		this->openIfBlock = tg->openIfBlock;
@@ -38,7 +38,7 @@
 		this->catalyst = tg->catalyst;
 	}
 	
-	int TokenGroup::isSealed(int level) {
+	int TokenGroup::isSealed(int level) const {
 		if (level < numTokens) {return (token.at(level).sealed == true ? 1 : 0);}
 		else {return -1;} // overflow 
 	}
@@ -69,7 +69,7 @@
 		return tools::intToString(this->currLevel) + "|" + tools::intToString(tokCnt);
 	}
 	
-	std::string TokenGroup::getData(int level, int tokCnt) {
+	std::string TokenGroup::getData(int level, int tokCnt) const {
 		if (level <= this->currLevel && tokCnt < token.at(level).tokCount) {return token.at(level).data.at(tokCnt);}
 		else {
 			std::cout << "CRITERROR :: Overflow: TokenGroup::getData() level overflow!" <<std::endl;
