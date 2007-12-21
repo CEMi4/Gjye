@@ -20,79 +20,42 @@
 
 //################ GENERAL DATATYPE ################//
 // class InternalDataType 
+	/* 
+	* value's representation as a string -- 0
+	* 1 and 2 are arrays and vectors, respectively 
+	* as an int -- 4
+	* as a double -- 8
+	* someday ... complex number -- 16
+	* someday ... ClassWrap -- 32
+	*/
 	
 	/* protected */
-	int InternalDataType::bestType( const std::string testValue ) const {
-			if ( tools::isInteger( testValue ) ) { // int 
-				return 3; 
-			}
-			else if ( tools::isNumber( testValue ) ) { // double 
-				return 4; 
-			}
-			// and the like ... 
-			else {
-				return 0; // string
-			}
-	}
+	
 	
 	/* public */ 
-	InternalDataType::InternalDataType( std::string initValue ) {
-		this->validType = 0; // initially, it's a string 
-		this->stringValue = initValue; // told ya 
-		this->references = 1;
-		
-		int testType = bestType( this->stringValue );
-		
-		if ( testType == 3 ) { // int 
-			this->intValue = (int) tools::stringToInt(this->stringValue);
-			this->validType = 3; 
-		}
-		else if ( testType == 4 ) { // double 
-			this->dblValue = tools::stringToInt(this->stringValue);
-			this->validType = 4; 
-		}
-		// and the like ... 
-		
+	InternalDataType::InternalDataType( void * initValue, int initType ) {
+		this->validType = initType;
+		this->dataValue = initValue;
+		this->references = 1; // someone cares about you 
 	}
-	InternalDataType::~InternalDataType() {} 
-	
-	
-	void InternalDataType::modify( double newValue, bool isDouble ) {
-		if (isDouble) {
-			this->dblValue = newValue;
-			this->validType = 4;  // double 
-		} else {
-			this->intValue = (int) newValue;
-			this->validType = 3;  // int 
+	InternalDataType::~InternalDataType() {
+		if ( this->dataValue != NULL ) {
+			if ( this->validType == 0 ) delete (std::string *) this->dataValue;
+			else if ( this->validType ^ 4 == 0 ) delete (int *) this->dataValue;
+			else if ( this->validType ^ 8 == 0 ) delete (double *) this->dataValue;
+			else if ( this->validType & 3 != 0 ) delete (VariableStorage *) this->dataValue; // assume it's an array or vector otherwise 
 		}
 	}
 	
-	void InternalDataType::modify( std::string newValue ) {
-		
-		int testType = bestType( newValue );
-		
-		if ( testType == 3 ) { // int 
-			this->intValue = (int) tools::stringToInt(this->stringValue);
-			this->validType = 3; 
-		}
-		else if ( testType == 4 ) { // double 
-			this->dblValue = tools::stringToInt(this->stringValue);
-			this->validType = 4; 
-		}
-		else {
-			this->validType = 0; // string 
-			this->stringValue = newValue;
-		}
-		// and the like ... 
-		
-	}
 	
+	void InternalDataType::setData( void * newValue, int newType ) {
+		this->dataValue = newValue;
+		this->validType = newType;
+	}
 	
 	int InternalDataType::getType() const {return this->validType;}
 	
-	int InternalDataType::getInt() const {return this->intValue;}
-	double InternalDataType::getDbl() const {return this->dblValue;}
-	std::string InternalDataType::getString() const {return this->stringValue;}
+	void * InternalDataType::getValue() const {return this->dataValue;}
 	
 /// ################################ ///
 
@@ -129,10 +92,9 @@
 	std::string VariableStorage::variableReferencer(std::string header) const { // create a unique (generic) variable name
 		std::ostringstream outs;
 		char varRef[16];
-		sprintf(varRef,"%010i",this->startVariableReference);
+		sprintf(varRef,"%.10i",this->startVariableReference); // 0 left-padded, 10 digits long 
 		outs << varRef;
-		std::string body = outs.str();
-		header.append(body);
+		header.append( outs.str() );
 		++(this->startVariableReference);
 		return header;
 	}

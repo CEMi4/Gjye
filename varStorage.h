@@ -14,34 +14,29 @@ struct strCmp {
 
 class InternalDataType {
 protected: 
-	std::string stringValue; // value's representation as a string -- 0
-	// note:  1 and 2 are arrays and vectors 
-	int intValue; // as an int -- 3
-	double dblValue; // as a double -- 4 
-	// someday ... complex number -- 5
-	// someday ... ClassWrap -- 6
+	void * dataValue; // a void pointer to whatever it is ... 
 	
 	int validType; // which type is currently valid (best effort) 
-	int references; // how many pointers are pointint to you? 
+	/* 
+	* value's representation as a string -- 0
+	* 1 and 2 are arrays and vectors, respectively 
+	* as an int -- 4
+	* as a double -- 8
+	* someday ... complex number -- 16
+	* someday ... ClassWrap -- 32
+	*/
 	
-	int bestType( const std::string ) const;
+	int references; // how many pointers are pointing to you? 
 	
 public: 
-	InternalDataType(std::string = ""); // default constructor definitely not recommended, but whatever 
+	InternalDataType( void *, int );
 	~InternalDataType();
 	
 	
-	void modify( double, bool = true ); // update it as an integer or double 
-	
-	void modify(std::string); // update the value/object 
-	
+	void setData( void *, int ); // update the object 
 	
 	int getType() const;
-	
-	int getInt() const;
-	double getDbl() const;
-	std::string getString() const;
-	// and the like ... 
+	void * getValue() const;
 };
 
 
@@ -51,6 +46,8 @@ protected:
 	std::map<std::string, bool, strCmp> isScalar; // type
 	std::map<std::string, std::string> variableNames; // scalar
 	std::map<std::string, VariableStorage> vectorNames; // vector
+	
+	std::map<std::string, InternalDataType *, strCmp> dataNames; // must be a pointer for mult. references 
 	
 	mutable int startVariableReference; // 1000000000 -- hopefully find a better way than this later 
 	int arrayAutoIndex;
