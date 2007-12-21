@@ -254,17 +254,17 @@
 	
 	std::string beginsWith_Obj::beginsWithVector(int type, VariableStorage * leftVector) {
 		std::string beWithData;
-		std::map<std::string, bool, strCmp> * leftNodes = leftVector->getVectorNodes();
+		std::map<std::string, InternalDataType *, strCmp> * leftNodes = leftVector->getVectorNodes();
 		
 		if (type == 0) {
 			beWithData = tools::prepareVectorData(dataStructure, vocab["beginsWith"]); // must be a scalar (so we force it)   this might be ambiguous in the case of  %VEC beginsWith %VEC 
-			std::map<std::string, bool>::const_iterator iter = leftNodes->begin();
+			std::map<std::string, InternalDataType *>::const_iterator iter = leftNodes->begin();
 			if (leftVector->getData(iter->first) == beWithData) return "1";
 			else return "0";
 		}
 		else {
 			beWithData = tools::prepareVectorData(dataStructure, vocab["endsWith"]); // must be a scalar (so we force it) 
-			std::map<std::string, bool>::reverse_iterator iter = leftNodes->rbegin();
+			std::map<std::string, InternalDataType *>::reverse_iterator iter = leftNodes->rbegin();
 			if (leftVector->getData(iter->first) == beWithData) return "1";
 			else return "0";
 		}
@@ -447,16 +447,16 @@
 	}
 	
 	std::string Contains_Obj::containsVector(int type, VariableStorage * leftVector) {
-		std::map<std::string, bool, strCmp> * leftNodes = leftVector->getVectorNodes();
+		std::map<std::string, InternalDataType *, strCmp> * leftNodes = leftVector->getVectorNodes();
 		std::string containsData;
 		bool contains = false;
 		
 		if (type == 0) containsData = tools::prepareVectorData(dataStructure, vocab["contains"]);
 		else containsData = tools::prepareVectorData(dataStructure, vocab["lacks"]);
 		
-		std::map<std::string, bool>::const_iterator iter;
+		std::map<std::string, InternalDataType *>::const_iterator iter;
 		for (iter = leftNodes->begin(); iter != leftNodes->end(); ++iter) {
-			if ((*leftNodes)[iter->first] == true) { // we can only compare scalars (don't convert -- ambiguous) 
+			if ((*leftNodes)[iter->first]->getType() == 0) { // we can only compare scalars/strings (don't convert -- ambiguous) 
 				if (leftVector->getData(iter->first) == containsData) contains = true;
 			}
 		}
@@ -612,22 +612,22 @@
 	}
 	
 	std::string IndexOf_Obj::indexOfInVector(int type, VariableStorage * inVector) {
-		std::map<std::string, bool, strCmp> * inNodes = inVector->getVectorNodes();
+		std::map<std::string, InternalDataType *, strCmp> * inNodes = inVector->getVectorNodes();
 		
 		if (type == 0) {
 			std::string findData = tools::prepareVectorData(dataStructure, vocab["IndexOf"]);
-			std::map<std::string, bool>::const_iterator iter;
+			std::map<std::string, InternalDataType *>::const_iterator iter;
 			for (iter = inNodes->begin(); iter != inNodes->end(); ++iter) {
-				if ((*inNodes)[iter->first] == true) { // we can only compare scalars (don't convert -- ambiguous) 
+				if ((*inNodes)[iter->first]->getValue() == 0) { // we can only compare scalars/strings (don't convert -- ambiguous) 
 					if (inVector->getData(iter->first) == findData) return iter->first;
 				}
 			}
 		}
 		else {
 			std::string findData = tools::prepareVectorData(dataStructure, vocab["LastIndexOf"]);
-			std::map<std::string, bool>::reverse_iterator iter;
+			std::map<std::string, InternalDataType *>::reverse_iterator iter;
 			for (iter = inNodes->rbegin(); iter != inNodes->rend(); ++iter) {
-				if ((*inNodes)[iter->first] == true) { // we can only compare scalars (don't convert -- ambiguous) 
+				if ((*inNodes)[iter->first]->getValue() == 0) { // we can only compare scalars/strings (don't convert -- ambiguous) 
 					if (inVector->getData(iter->first) == findData) return iter->first;
 				}
 			}
@@ -842,10 +842,10 @@
 			
 			if (vectorStorage->type(joinData) > 0) { // it's a vector 
 				vectorStorage = vectorStorage->getVector(joinData);
-				std::map<std::string, bool, strCmp> * inNodes = vectorStorage->getVectorNodes();
+				std::map<std::string, InternalDataType *, strCmp> * inNodes = vectorStorage->getVectorNodes();
 				
 				std::string juncture = tools::prepareVectorData(dataStructure, vocab["by"]);
-				std::map<std::string, bool>::const_iterator iter;
+				std::map<std::string, InternalDataType *>::const_iterator iter;
 				for (iter = inNodes->begin(); iter != inNodes->end(); ++iter) {
 					returnValue += vectorStorage->getData(iter->first) + juncture; // only the values (strip keys for vectors) 
 				}

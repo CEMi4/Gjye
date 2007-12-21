@@ -38,12 +38,25 @@
 		this->dataValue = initValue;
 		this->references = 1; // someone cares about you 
 	}
+	InternalDataType::InternalDataType(InternalDataType * idt) { // clone 
+		this->validType = idt->validType;
+		this->references = idt->references;
+		if ( idt->dataValue != NULL ) {
+			if ( idt->validType == 0 ) this->dataValue = (void *) new std::string( *((std::string *) idt->dataValue) );
+			else if ( (idt->validType ^ 4) == 0 ) this->dataValue = (void *) &( *(  (int *) idt->dataValue ));
+			else if ( (idt->validType ^ 8) == 0 ) this->dataValue = (void *) &( *(  (double *) idt->dataValue ));
+			else if ( (idt->validType & 3) != 0 ) this->dataValue = (void *) new VariableStorage( (VariableStorage *) idt->dataValue ); // assume it's an array or vector otherwise 
+			else if (SHOW_DEBUGGING) std::cout << "WARNING: Could not clone an unknown internal data type: " << idt->validType << std::endl;
+		}
+	}
 	InternalDataType::~InternalDataType() {
 		if ( this->dataValue != NULL ) {
 			if ( this->validType == 0 ) delete (std::string *) this->dataValue;
-			else if ( this->validType ^ 4 == 0 ) delete (int *) this->dataValue;
-			else if ( this->validType ^ 8 == 0 ) delete (double *) this->dataValue;
-			else if ( this->validType & 3 != 0 ) delete (VariableStorage *) this->dataValue; // assume it's an array or vector otherwise 
+			else if ( (this->validType ^ 4) == 0 ) delete (int *) this->dataValue;
+			else if ( (this->validType ^ 8) == 0 ) delete (double *) this->dataValue;
+			else if ( (this->validType & 3) != 0 ) delete (VariableStorage *) this->dataValue; // assume it's an array or vector otherwise 
+			else if (SHOW_DEBUGGING) std::cout << "WARNING: Could not destroy an unknown internal data type: " << this->validType << std::endl;
+			this->dataValue = NULL;
 		}
 	}
 	
@@ -52,6 +65,12 @@
 		this->dataValue = newValue;
 		this->validType = newType;
 	}
+	
+	void InternalDataType::upRef() {++this->references;}
+	void InternalDataType::downRef() {--this->references;}
+	
+	
+	int InternalDataType::getRefs() const {return this->references;}
 	
 	int InternalDataType::getType() const {return this->validType;}
 	
@@ -67,15 +86,15 @@
 // class VariableStorage 
 	
 	/* protected */
-	void VariableStorage::refresh(bool fullRefresh) { // reset the auto index  ... we have to do a O(n) check for tainted every time we remove! phreak! (implement unrolled) 
-		if (this->isScalar.size() > 0) {
-			std::map<std::string, bool>::reverse_iterator itr = this->isScalar.rbegin();
+	void VariableStorage::refresh(bool fullRefresh) { // reset the auto index  ... we have to do a O(n) check for tainted every time we remove! phreak! 
+		if (this->dataNames.size() > 0) {
+			std::map<std::string, InternalDataType *>::reverse_iterator itr = this->dataNames.rbegin();
 			if (fullRefresh == false && this->arrayAutoIndex >= 0 && tools::isInteger(itr->first))  // only refresh autoindex (assume it's still an array) -- for inserts only 
 				this->arrayAutoIndex = (int) tools::stringToInt(itr->first) + 1;
-			else { // for removals (we have to do a full check) 
+			else { // for removals (we have to do a full check) -- did they remove the one forcing it to be a vector? 
 				if (tools::isInteger(itr->first)) {
 					this->arrayAutoIndex = (int) tools::stringToInt(itr->first) + 1;
-					for (; itr != this->isScalar.rend(); ++itr) 
+					for (; itr != this->dataNames.rend(); ++itr) 
 						if (tools::isInteger(itr->first) == false) this->arrayAutoIndex = -1;
 				} else this->arrayAutoIndex = -1;
 			}
@@ -86,7 +105,28 @@
 	
 	/* public */ 
 	VariableStorage::VariableStorage(int aaIdx) {this->startVariableReference = 0;this->arrayAutoIndex = aaIdx;}
-	VariableStorage::~VariableStorage() {} // variableNames.~vector<string>();variableData.~vector<string>();
+	VariableStorage::VariableStorage(VariableStorage * vSto) { // clone (deep) 
+		std::map<std::string, InternalDataType *>::const_iterator iter;
+		for (iter = vSto->dataNames.begin(); iter != vSto->dataNames.end(); ++iter) {
+			this->dataNames[iter->first] = new InternalDataType( vSto->dataNames[iter->first] );
+			//if (vSto->dataNames[iter->first] != NULL && vSto->dataNames[iter->first]->getType() == 0)
+				//std::cout << "CLONED: " << iter->first << "::" << *( (std::string *) this->dataNames[iter->first]->getValue() ) << "::" << this->dataNames[iter->first]->getType() <<std::endl;
+		}
+		this->startVariableReference = vSto->startVariableReference;
+		this->arrayAutoIndex = vSto->arrayAutoIndex;
+	}
+	VariableStorage::~VariableStorage() {
+		std::map<std::string, InternalDataType *>::const_iterator iter;
+		for (iter = this->dataNames.begin(); iter != this->dataNames.end(); ++iter) {
+			if (this->dataNames[iter->first] == NULL) continue;
+			this->dataNames[iter->first]->downRef(); // i'm no longer interested 
+			if (this->dataNames[iter->first]->getRefs() == 0) {
+				//std::cout << "DESTROYED: " << iter->first << "::" << this->dataNames[iter->first]->getValue() <<std::endl;
+				delete this->dataNames[iter->first];
+				this->dataNames[iter->first] = NULL;
+			}
+		}
+	}
 	
 	
 	std::string VariableStorage::variableReferencer(std::string header) const { // create a unique (generic) variable name
@@ -100,32 +140,28 @@
 	}
 	
 	
-	bool VariableStorage::addVector(std::string thisName, VariableStorage vector, int insPos) { // use getVector first to jump to the level!   Dumps an entire vector into this namespace 
+	bool VariableStorage::addVector(std::string thisName, VariableStorage & vector, int insPos) { // use getVector first to jump to the level!   Dumps an entire vector into this namespace 
 		if (this->arrayAutoIndex >= 0 && (thisName == "" || tools::isInteger(thisName))) { // arrays 
 			if (thisName == "" && insPos < 0) {
 				thisName = tools::intToString(this->arrayAutoIndex);
 			}
 			else if (thisName == "") { // insert at insPos (& shift all elements over one ... overwriting if necessary) 
-				std::map<std::string, bool>::reverse_iterator iter;
-				for (iter = this->isScalar.rbegin(); iter != this->isScalar.rend(); ++iter) {
+				std::map<std::string, InternalDataType *>::reverse_iterator iter;
+				for (iter = this->dataNames.rbegin(); iter != this->dataNames.rend(); ++iter) {
 					std::string thisIndex = iter->first, nextIndex = tools::intToString(tools::stringToInt(thisIndex) + 1);
-					if (this->isScalar[thisIndex] == true) {this->variableNames[nextIndex] = this->variableNames[thisIndex];}
-					else {this->vectorNames[nextIndex] = this->vectorNames[thisIndex];}
-					this->isScalar[nextIndex] = this->isScalar[thisIndex];
+					this->dataNames[nextIndex] = this->dataNames[thisIndex];
 					if (thisIndex == tools::intToString(insPos)) {break;}
 				}
 				thisName = tools::intToString(insPos);
 			} // otherwise insert as thisName (overwriting if necessary) 
 			
-			this->vectorNames[thisName] = vector;
-			this->isScalar[thisName] = false;
+			this->dataNames[thisName] = new InternalDataType( new VariableStorage( &vector ), (vector.arrayAutoIndex >= 0) ? 1 : 2 );
 			this->refresh();
 			return true;
 		}
 		else if (thisName != "") { // vector/tree
-			this->vectorNames[thisName] = vector;
+			this->dataNames[thisName] = new InternalDataType( new VariableStorage( &vector ), (vector.arrayAutoIndex >= 0) ? 1 : 2 );
 			this->arrayAutoIndex = -1; // taint array
-			this->isScalar[thisName] = false;
 			return true;
 		}
 		else {std::cout << "WARNING :: Mishandling: Cannot push onto a tainted array!" <<std::endl;}
@@ -139,25 +175,21 @@
 				thisName = tools::intToString(this->arrayAutoIndex);
 			}
 			else if (thisName == "") { // insert at insPos (& shift all elements over one ... overwriting if necessary) 
-				std::map<std::string, bool>::reverse_iterator iter;
-				for (iter = this->isScalar.rbegin(); iter != this->isScalar.rend(); ++iter) {
+				std::map<std::string, InternalDataType *>::reverse_iterator iter;
+				for (iter = this->dataNames.rbegin(); iter != this->dataNames.rend(); ++iter) {
 					std::string thisIndex = iter->first, nextIndex = tools::intToString(tools::stringToInt(thisIndex) + 1);
-					if (this->isScalar[thisIndex] == true) {this->variableNames[nextIndex] = this->variableNames[thisIndex];}
-					else {this->vectorNames[nextIndex] = this->vectorNames[thisIndex];}
-					this->isScalar[nextIndex] = this->isScalar[thisIndex];
+					this->dataNames[nextIndex] = this->dataNames[thisIndex];
 					if (thisIndex == tools::intToString(insPos)) {break;}
 				}
 				thisName = tools::intToString(insPos);
 			} // otherwise insert as thisName (overwriting if necessary) 
 			
-			this->variableNames[thisName] = thisData;
-			this->isScalar[thisName] = true;
+			this->dataNames[thisName] = new InternalDataType( new std::string( thisData ), 0 );
 			this->refresh();
 			return true;
 		} // push onto an array
-		else if (thisName != "") { // push a scalar or on a vector
-			this->variableNames[thisName] = thisData;
-			this->isScalar[thisName] = true;
+		else if (thisName != "") { // push a scalar on a vector
+			this->dataNames[thisName] = new InternalDataType( new std::string( thisData ), 0 );
 			this->arrayAutoIndex = -1; // taint array
 			return true;
 		}
@@ -169,14 +201,15 @@
 	VariableStorage * VariableStorage::getVector(std::string thisName) { // give me an object if i give you a base 
 		if (this->variableExists(thisName) == false) {std::cout << "ERROR :: DNE: getVector("  << thisName << ")!" <<std::endl;exit(1);} // otherwise die 
 		
-		if (this->isScalar.find(thisName)->second == false) {
-			return &this->vectorNames.find(thisName)->second;
+		if ( (this->dataNames.find(thisName)->second->getType() & 3) != 0) {
+			return (VariableStorage *) this->dataNames.find(thisName)->second->getValue();
 		}
 		else {std::cout << "WARNING:: Scalar: getVector("  << thisName << ") is scalar!" <<std::endl;return NULL;} // we can't grab a scalar foo! 
 	}
 	
 	
-	VariableStorage * VariableStorage::vecStringToVector(std::string * vecName, bool checkBaseExistence, bool returnNullOnNonExistance) { // convert a vector STRING (eg. VEC[1][2])  into the baseline object (and vecName becomes the highest level -- eg. 2).  uses getVector
+	// convert a vector STRING (eg. VEC[1][2])  into the baseline object (and vecName becomes the highest level -- eg. 2).  uses getVector
+	VariableStorage * VariableStorage::vecStringToVector(std::string * vecName, bool checkBaseExistence, bool returnNullOnNonExistance) {
 		VariableStorage * returnVector = this;
 		if (*vecName == "") return returnVector;
 		
@@ -199,7 +232,9 @@
 							break;
 						} else {
 							if (returnNullOnNonExistance && returnVector->variableExists(vecName->substr(1, nIndex-1)) == false) return NULL;
-							returnVector = returnVector->getVector(tools::prepareVectorData(new DataStorageStack(this), vecName->substr(1, nIndex-1))); // jump! 
+							DataStorageStack * tmpDSS = new DataStorageStack(this); // just a temp wrapper 
+							returnVector = returnVector->getVector(tools::prepareVectorData(tmpDSS, vecName->substr(1, nIndex-1))); // jump!  
+							delete tmpDSS;
 							vecName->erase(0, nIndex+1);
 							nIndex = 0;
 						}
@@ -219,11 +254,12 @@
 	bool VariableStorage::removeVariable(std::string thisName) { // use getVector first to jump to the level! 
 		if (this->variableExists(thisName) == false) {return false;} // we can't delete what doesn't exist! 
 		else {
-			if (this->isScalar[thisName] == true) {this->variableNames.erase(thisName);}
-			else { // you also have to bump back all the autoindices for arrays (do we? is it null now?) 
-				this->vectorNames.erase(thisName);
+			this->dataNames[thisName]->downRef(); // i'm no longer interested 
+			if (this->dataNames[thisName]->getRefs() == 0) {
+				delete this->dataNames[thisName];
+				this->dataNames[thisName] = NULL;
 			}
-			this->isScalar.erase(thisName);
+			this->dataNames.erase(thisName);
 			this->refresh(true); // check to see if it's still tainted, and refresh the autoindex 
 			return true;
 		}
@@ -232,32 +268,36 @@
 	
 	std::string VariableStorage::getData(std::string thisName) { // use getVector first to jump to the level! 
 		if (this->variableExists(thisName) == true) {
-			if (this->isScalar.find(thisName)->second == true) {return this->variableNames.find(thisName)->second;} // variable 
-			else {return tools::intToString(this->vectorNames.find(thisName)->second.isScalar.size());} // vector - return vector size 
+			if (this->dataNames.find(thisName)->second->getType() == 0) {return *( (std::string *) this->dataNames.find(thisName)->second->getValue());} // variable 
+			else if ( (this->dataNames.find(thisName)->second->getType() & 3) != 0) {
+				return tools::intToString(  ( (VariableStorage *) this->dataNames.find(thisName)->second->getValue() )->dataNames.size());
+			} // vector - return vector size 
+			else {std::cout << "ERROR :: Unsupported Type: getData("  << thisName << ")!" <<std::endl;exit(1);} // not string or array/vector  
 		}
 		else {std::cout << "ERROR :: DNE: getData("  << thisName << ")!" <<std::endl;exit(1);} // DNE 
 	}
 	
 	
-	std::map<std::string, bool, strCmp> * VariableStorage::getVectorNodes() { // use getVector first to  jump to the level! (gives them a pointer to isScalar (so they can find var names within) 
-		return &this->isScalar;
+	std::map<std::string, InternalDataType *, strCmp> * VariableStorage::getVectorNodes() { // use getVector first to  jump to the level! (gives them a pointer to isScalar (so they can find var names within) 
+		return &this->dataNames;
 	}
 	
 	
 	std::string VariableStorage::dumpData() { // for developmental purposes 
 		std::string buffer = "";
-		std::map<std::string, bool>::const_iterator iter;
-		for (iter = this->isScalar.begin(); iter != this->isScalar.end(); ++iter) {
-			std::string arrayPrint = "";if (this->vectorNames[iter->first].arrayAutoIndex >= 0) {arrayPrint = "*";}
-			if (this->isScalar[iter->first] == true) {buffer += "" + iter->first + "=" + this->variableNames[iter->first] + ",";}
-			else {buffer += "" + iter->first + arrayPrint + " :: [" + this->vectorNames[iter->first].dumpData() + "],";}
+		std::map<std::string, InternalDataType *>::const_iterator iter;
+		for (iter = this->dataNames.begin(); iter != this->dataNames.end(); ++iter) {
+			std::string arrayPrint = "";if (this->dataNames[iter->first]->getType() == 1) {arrayPrint = "*";}
+			if (this->dataNames[iter->first]->getType() == 0) {buffer += "" + iter->first + "=" + *( (std::string *) this->dataNames[iter->first]->getValue() ) + ",";}
+			else if ( (this->dataNames[iter->first]->getType() & 3) != 0) {buffer += "" + iter->first + arrayPrint + " :: [" + ( (VariableStorage *) this->dataNames[iter->first]->getValue() )->dumpData() + "],";}
+			else {} // not string or array/vector  
 		}
 		return buffer;
 	}
 	
 	
 	int VariableStorage::size() const { // only makes sense for vector nodes 
-		return this->isScalar.size();
+		return this->dataNames.size(); // of *this 
 	}
 	
 	
@@ -265,8 +305,8 @@
 		if (thisName == "") {return (this->arrayAutoIndex >= 0 ? 1 : 2);} // *this can't be a scalar! 
 		
 		if (this->variableExists(thisName)) {
-			if (this->isScalar.find(thisName)->second == false && this->vectorNames.find(thisName)->second.arrayAutoIndex >= 0) {return 1;} // array
-			else if (this->isScalar.find(thisName)->second == false) {return 2;} // vector
+			if (this->dataNames.find(thisName)->second->getType() == 1) {return 1;} // array
+			else if (this->dataNames.find(thisName)->second->getType() == 2) {return 2;} // vector
 			else {return 0;} // scalar
 		}
 		else {return -1;} // DNE 
@@ -284,7 +324,7 @@
 	bool VariableStorage::variableExists(std::string thisName) {
 		if (thisName == "") return false;
 		
-		if (this->isScalar.count(thisName) == 1) {return true;}
+		if (this->dataNames.count(thisName) == 1) {return true;}
 		return false;
 	}
 /// ################################ ///
@@ -322,7 +362,7 @@
 	}
 	
 	
-	bool DataStorageStack::addVector(std::string thisName, VariableStorage vector, int insPos, bool instantiate) {
+	bool DataStorageStack::addVector(std::string thisName, VariableStorage & vector, int insPos, bool instantiate) {
 		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
 		
 		if (instantiate == true) {return (*iter)->addVector(thisName, vector, insPos);} // if we're instantiating, then we want the top of the stack 
@@ -396,7 +436,7 @@
 	}
 	
 	
-	std::map<std::string, bool, strCmp> * DataStorageStack::getVectorNodes() {
+	std::map<std::string, InternalDataType *, strCmp> * DataStorageStack::getVectorNodes() {
 		return (*this->dataStack.rbegin())->getVectorNodes(); // top of the stack 
 	}
 	

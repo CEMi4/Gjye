@@ -95,20 +95,20 @@
 			tokenQualifier = dataStructure->variableReferencer("_VECTOR_");
 			dataStructure->addVector(tokenQualifier, *(new VariableStorage), -1, true); // create an empty set 
 			
-			std::map<std::string, bool, strCmp> * leftNodes = leftVector->getVectorNodes();
-			std::map<std::string, bool, strCmp> * rightNodes = rightVector->getVectorNodes();
+			std::map<std::string, InternalDataType *, strCmp> * leftNodes = leftVector->getVectorNodes();
+			std::map<std::string, InternalDataType *, strCmp> * rightNodes = rightVector->getVectorNodes();
 			
-			std::map<std::string, bool>::const_iterator iter;
+			std::map<std::string, InternalDataType *>::const_iterator iter;
 			std::string addName = "";
 			for (iter = leftNodes->begin(); iter != leftNodes->end(); ++iter) {
 				if (leftVector->type() >= 0) addName = ""; else addName = iter->first;
-				if ((*leftNodes)[iter->first] == false) dataStructure->getVector(tokenQualifier)->addVector( addName   , *leftVector->getVector(iter->first)    ); // it's a vector type 
+				if ( ((*leftNodes)[iter->first]->getType() & 3) != 0) dataStructure->getVector(tokenQualifier)->addVector( addName   , *leftVector->getVector(iter->first)    ); // it's a vector type 
 				else dataStructure->getVector(tokenQualifier)->addVariable(addName, leftVector->getData(iter->first));
 			}
 			
 			for (iter = rightNodes->begin(); iter != rightNodes->end(); ++iter) {
 				if (rightVector->type() >= 0) addName = ""; else addName = iter->first;
-				if ((*rightNodes)[iter->first] == false) dataStructure->getVector(tokenQualifier)->addVector(    addName, *rightVector->getVector(iter->first)    ); // it's a vector type 
+				if ( ((*rightNodes)[iter->first]->getType() & 3) != 0) dataStructure->getVector(tokenQualifier)->addVector(    addName, *rightVector->getVector(iter->first)    ); // it's a vector type 
 				else dataStructure->getVector(tokenQualifier)->addVariable(addName, rightVector->getData(iter->first));
 			}
 			

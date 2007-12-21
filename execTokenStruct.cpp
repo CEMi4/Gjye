@@ -35,65 +35,67 @@ std::string runVectorStruct(EnviroWrap * environment, TokenGroup * tGroup, std::
 	if (catalyst == "-1") {catalyst = tGroup->catalyst;}
 	std::string catalystCpy;
 	catalystCpy = catalyst;
-
+	
 	if (catalystCpy.at(0) == '[' && catalystCpy.at(catalystCpy.length()-1) == ']') {
 		catalystCpy.replace(0,1,"");
 		catalystCpy.replace(catalystCpy.length()-1,1,"");
-
+		
 		std::string tokenQualifier = environment->dataStructure.variableReferencer("_VECTOR_");
-
-		environment->dataStructure.addVector(tokenQualifier, *(new VariableStorage), -1, true); // create an empty set
-
+		
+		VariableStorage * tmpVS = new VariableStorage;
+		environment->dataStructure.addVector(tokenQualifier, *tmpVS, -1, true); // create an empty set
+		delete tmpVS;
+		
 		while (catalystCpy.length() > 0) { // loop through each element of the vector dec.
 			int delimiter = (catalystCpy.find(',') != std::string::npos ? catalystCpy.find(',') : catalystCpy.length());
 			std::string headerName = "", tokenData = "", token = catalystCpy.substr(0,delimiter);
-
+			
 			if (token.find('«') != std::string::npos && token.find('»',token.find('«')) != std::string::npos) { // take care of sublevels
 				std::string tokID, tokVal;
 				int sIndex = 0, eIndex = 0, tokArry[2];
-
+				
 				sIndex = (token.find('«'));
 				eIndex = (token.find('»',sIndex));
 				tokID = token.substr(sIndex,eIndex-sIndex+1);
-
+				
 				if (parseTokID(tokID,tokArry) == false) {break;} // stop parsing the vector (we couldn't successfully parse an internal token)
 				tokVal = tGroup->getData(tokArry[0],tokArry[1]);
-
+				
 				if (tokVal.at(0) == '[' && tokVal.at(tokVal.length()-1) == ']') { // a vector's inside of this vector
 					token = runVectorStruct(environment,tGroup,tokVal); // recurse
 				} else if (tokVal.find('=',1) == std::string::npos || tokVal.at(0) == '(' && tokVal.at(tokVal.length()-1) == ')') { // don't catch non-parenthetical assignations! (they will be tree/hash headers)
 					token = runTokenStruct(environment,tGroup,token); // callback, give them the ENTIRE token string!  A QUICK FIX, used to just give them tokID!!!
 				} else {token = tokVal;}
 			}
-
+			
 			// at this point, any assignations inside of a vector will be treated as tree/hash heads!!
-
-
+			
+			
 			//std::cout << "\ntoken runVectorStruct: " << token <<std::endl; // TMP
-
+			
 			if (token.find('=',1) != std::string::npos) { // vector declaration (single)
 				int oPar = token.find('=',1);
 				int cPar = token.length();
 				headerName = token.substr(0,oPar); // not including =
 				tokenData = token.substr(oPar+1,cPar-oPar-1);
-
+				
 				if (headerName.find('«') != std::string::npos) {headerName = runTokenStruct(environment,tGroup,headerName);} // call backs
 				if (tokenData.find('«') != std::string::npos) {tokenData = runTokenStruct(environment,tGroup,tokenData);}
-
+				
 			} else {tokenData = token;} // array declaration (single)
-
+			
 			if (headerName != "")
 				headerName = tools::prepareVectorData(&environment->dataStructure, headerName); // give us the values (take out of variable form)
-
+			
 			//std::cout << "\nname/data runVectorStruct: " << headerName << " is " << tokenData <<std::endl; // TMP
-
+			
 			if (tokenData.at(0) == '%') { // add a vector/scalar to this vector
 				VariableStorage * vectorStorage = NULL;
-
+				
 				std::string tokenDataTmp = tokenData.substr(1,tokenData.length() - 1); // strip the leading %
 				vectorStorage = environment->dataStructure.vecStringToVector(&tokenDataTmp); // jump to the vector object we want to check (modifies tokenDataTmp to make it the highest level)
 				tokenDataTmp = tools::prepareVectorData(&environment->dataStructure, tokenDataTmp); // this is the highest level!  ie)  %topName[index][tokenDataTmp];  or  %tokenDataTmp;
-
+				
 				if (vectorStorage->type(tokenDataTmp) == 0) { // it's actually a scalar
 					tokenData = tools::prepareVectorData(&environment->dataStructure, tokenData); // get the _actual_ value (replace vars, etc.)
 					environment->dataStructure.getVector(tokenQualifier)->addVariable(headerName, tokenData);
@@ -102,17 +104,17 @@ std::string runVectorStruct(EnviroWrap * environment, TokenGroup * tGroup, std::
 					vectorStorage = vectorStorage->getVector(tokenDataTmp);
 					environment->dataStructure.getVector(tokenQualifier)->addVector(headerName, *vectorStorage);
 				}
-
-
+				
+				
 			}
 			else { // add a variable to this vector
 				tokenData = tools::prepareVectorData(&environment->dataStructure, tokenData); // get the _actual_ value (replace vars, etc.)
 				environment->dataStructure.getVector(tokenQualifier)->addVariable(headerName, tokenData);
 			}
-
+			
 			catalystCpy.replace(0,delimiter+1,"");
 		}
-
+		
 		tokenQualifier.insert(0,"%");
 		return tokenQualifier;
 	} else {return "%%";} // ut-oh
@@ -534,7 +536,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		if (sIndex > eIndex) {eIndex = sIndex;}
 		catalystCpy.replace(sIndex,eIndex-sIndex+1, thisObj->executeCode());
 		///
-
+		
 		delete thisObj;
 	} // otherwise it could've been a block, if-else, etc
 

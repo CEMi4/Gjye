@@ -1,6 +1,8 @@
 #ifndef VARSTORAGE_H
 #define VARSTORAGE_H
 
+extern bool SHOW_DEBUGGING;
+
 #include <map>
 #include <vector>
 
@@ -30,11 +32,16 @@ protected:
 	
 public: 
 	InternalDataType( void *, int );
+	InternalDataType(InternalDataType *);
 	~InternalDataType();
 	
 	
 	void setData( void *, int ); // update the object 
 	
+	void upRef();
+	void downRef();
+	
+	int getRefs() const;
 	int getType() const;
 	void * getValue() const;
 };
@@ -43,10 +50,6 @@ public:
 
 class VariableStorage {
 protected: 
-	std::map<std::string, bool, strCmp> isScalar; // type
-	std::map<std::string, std::string> variableNames; // scalar
-	std::map<std::string, VariableStorage> vectorNames; // vector
-	
 	std::map<std::string, InternalDataType *, strCmp> dataNames; // must be a pointer for mult. references 
 	
 	mutable int startVariableReference; // 1000000000 -- hopefully find a better way than this later 
@@ -58,11 +61,12 @@ protected:
 	
 public: 
 	VariableStorage(int = 0);
+	VariableStorage(VariableStorage *);
 	~VariableStorage();
 	
 	std::string variableReferencer(std::string) const;
 	
-	bool addVector(std::string = "", VariableStorage = NULL, int = -1);
+	bool addVector(std::string, VariableStorage &, int = -1);
 	bool addVariable(std::string = "", std::string = "", int = -1);
 	
 	VariableStorage * getVector(std::string);
@@ -71,7 +75,7 @@ public:
 	bool removeVariable(std::string);
 	
 	std::string getData(std::string);
-	std::map<std::string, bool, strCmp> * getVectorNodes();
+	std::map<std::string, InternalDataType *, strCmp> * getVectorNodes();
 	std::string dumpData();
 	
 	int size() const;
@@ -96,7 +100,7 @@ public:
 	
 	std::string variableReferencer(std::string);
 	
-	bool addVector(std::string = "", VariableStorage = NULL, int = -1, bool = false);
+	bool addVector(std::string, VariableStorage &, int = -1, bool = false);
 	bool addVariable(std::string = "", std::string = "", int = -1, bool = false);
 	
 	
@@ -106,7 +110,7 @@ public:
 	bool removeVariable(std::string);
 	
 	std::string getData(std::string);
-	std::map<std::string, bool, strCmp> * getVectorNodes();
+	std::map<std::string, InternalDataType *, strCmp> * getVectorNodes();
 	std::string dumpData();
 	
 	int size();
