@@ -3,9 +3,9 @@
 
 //################ GLOBAL CONSTANTS ################//
 const int numTokens = 128; // store up to 128(*128) tokens
-const std::string validTokenChars = "0123456789«»| "; // valids for tokens 
-const std::string tokenizers = "$(){}+-*/!=%#[], "; // used to find stops and starts 
-const std::string tokenizerStarts = "(+-*/!=%[,"; // used to find starts 
+const std::string validTokenChars = "0123456789«»¬ "; // valids for tokens 
+const std::string tokenizers = "$(){}+-*/!=%#[], ><&|"; // used to find stops and starts 
+const std::string tokenizerStarts = "(+-*/!=%[,><&|"; // used to find starts 
 const std::string operators = "=*/%+-><?:";
 const std::string validKeyChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"; // valid names for variables and vectors and functions 
 const std::string letterChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"; // A-Za-z

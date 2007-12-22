@@ -66,7 +66,7 @@
 		
 		++(token.at(this->currLevel).tokCount);
 		
-		return tools::intToString(this->currLevel) + "|" + tools::intToString(tokCnt);
+		return tools::intToString(this->currLevel) + "¬" + tools::intToString(tokCnt);
 	}
 	
 	std::string TokenGroup::getData(int level, int tokCnt) const {

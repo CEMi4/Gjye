@@ -13,12 +13,12 @@ namespace exec {
 
 //################ EXCHANGE TOKEN FOR DATA ################//
 bool parseTokID(std::string tokID, int retArry[]) { // turn «#|#» into array of # and #
-	if (tokID.find('«') != std::string::npos && tokID.find('»') != std::string::npos && tokID.find('|') != std::string::npos) {
+	if (tokID.find('«') != std::string::npos && tokID.find('»') != std::string::npos && tokID.find('¬') != std::string::npos) {
 		int sIndex = (tokID.find('«'));
 		int eIndex = (tokID.find('»'));
 		tokID = tokID.substr(sIndex+1,eIndex-sIndex);
 
-		int index = (tokID.find('|'));
+		int index = (tokID.find('¬'));
 		retArry[0] = (int) tools::stringToInt(tokID.substr(0,index));
 		retArry[1] = (int) tools::stringToInt(  tokID.substr(index+1,tokID.length())  );
 		return true;
@@ -218,7 +218,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		if (parseTokID(tokID,tokArry) == false) {std::cout << "ERROR :: Token miss: " << tokID <<std::endl;break;} // token miss!
 		tokID = tGroup->getData(tokArry[0],tokArry[1]);
 		
-		if (tokID.length() <= 0) {std::cout << "ERROR: Empty token: " << tokArry[0] << "|" << tokArry[1] <<std::endl;exit(1);} // the token has nothing in it!!
+		if (tokID.length() <= 0) {std::cout << "ERROR: Empty token: " << tokArry[0] << "¬" << tokArry[1] <<std::endl;exit(1);} // the token has nothing in it!!
 		
 		if (tokID.at(0) == '{' && tokID.at(tokID.length()-1) == '}') { // catch generic block declarations
 			std::string blockData = tokID.substr(1,tokID.length()-2); // look ma, no braces!

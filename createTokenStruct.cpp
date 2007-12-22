@@ -82,7 +82,7 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 			numberEnd = input->find_first_not_of(numericalCharsUnsigned,mIndex); // unsigned because we don't want to swallow subtraction 
 			if (numberEnd == std::string::npos) numberEnd = input->length();
 			
-			if (numberEnd < input->length() && input->at(numberEnd) == '|') {mIndex = numberEnd;continue;} // don't swallow tokens! 
+			if (numberEnd < input->length() && input->at(numberEnd) == '¬') {mIndex = numberEnd;continue;} // don't swallow tokens! 
 			
 			bool hexCheck = (input->substr(mIndex,numberEnd-mIndex+1) == "0x");
 			if (numberEnd < input->length() && (input->at(numberEnd) == 'r' || hexCheck == true)) { // we found a radix definition (NO DECIMAL PLACES!!  10r10.5 -> 10) 
