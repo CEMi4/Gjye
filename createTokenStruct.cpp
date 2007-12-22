@@ -345,19 +345,20 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 	
 	highPrecedenceHandler(tGroup, fullToken); // the highs are handled separately! (because i said so) 
 	
-	std::string operatorsOrdered[] = {"*/%", "+-", "<>", "!=", "="}; // in order of precedence  ... eventually this is ::       "*/%","+-",           "< <= > >=","== !=","and &&","or ||","?:",             "=" 
+	std::string operatorsOrdered[] = {"*/%", "+-", "<>", "!=", "&", "|", "="}; // in order of precedence  ... eventually this is ::       "*/%","+-",           "< <= > >=","== !=","and &&","or ||","?:",             "=" 
 	
-	for (int i = 0; i < 5; ++i) { // the five (so far) orders of precedence 
+	for (int i = 0; i < 7; ++i) { // the seven (so far) orders of precedence 
 		
 		std::string tokID;
 		
 		int operatorPivot, operatorPivot2, forceJump = 0;
-		if (i == 4) forceJump = fullToken->length()-1;
-		while ((operatorPivot = (i == 4?fullToken->find_last_of(operatorsOrdered[i], forceJump):fullToken->find_first_of(operatorsOrdered[i], forceJump))) != std::string::npos) { // lToR vs rToL
+		const int rToLindex = 6;
+		if (i == rToLindex) forceJump = fullToken->length()-1;
+		while (  (operatorPivot = (i == rToLindex?fullToken->find_last_of(operatorsOrdered[i], forceJump):fullToken->find_first_of(operatorsOrdered[i], forceJump)))   != std::string::npos) { // lToR vs rToL
 			int beginPos = 0, termPos = 0;
 			
-			if ( i == 3 && fullToken->at(operatorPivot+1) != '=' ) {
-				forceJump = operatorPivot+2;
+			if ( operatorPivot+1 < fullToken->length() && (i == 3 && fullToken->at(operatorPivot+1) != '=' || i == 4 && fullToken->at(operatorPivot+1) != '&' || i == 5 && fullToken->at(operatorPivot+1) != '|') ) {
+				forceJump = operatorPivot+2; // don't bother if the pair isn't there 
 				continue;
 			}
 			
@@ -394,6 +395,10 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 				&& operatorPivot+1 < fullToken->length() && fullToken->at(operatorPivot+1) == '=') 
 					++operatorPivot2; // support >= <= != == 
 			
+			if ( operatorPivot+1 < fullToken->length() && (fullToken->at(operatorPivot) == '&' && fullToken->at(operatorPivot+1) == '&'
+				 || fullToken->at(operatorPivot) == '|' && fullToken->at(operatorPivot+1) == '|') )
+					++operatorPivot2; // support &&  ||  
+			
 			operatorPivotTemp = operatorPivot2;
 			if (operatorPivotTemp+1 < fullToken->length() && fullToken->at(operatorPivotTemp+1) == ' ') ++operatorPivotTemp; // allow for trailing spaces, but ignore 
 			
@@ -404,7 +409,7 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 				termPos = fullToken->find_first_not_of(validKeyChars,operatorPivotTemp+2); // 2 because operators are not of validKeyChars +1 
 			}
 			else if (operatorPivotTemp+1 < fullToken->length() && isalpha(fullToken->at(operatorPivotTemp+1)) ) { // presumably there is a function to the right, so skip it this time 
-				(i == 4 ? forceJump=operatorPivot-1 : forceJump=operatorPivot+1);
+				(i == rToLindex ? forceJump=operatorPivot-1 : forceJump=operatorPivot+1);
 				continue;
 			}
 			else {std::cout << "CRITERROR :: Malformation: Operator format (right)!" <<std::endl;exit(1); /* ERROR HANDLE */ }
@@ -427,9 +432,9 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			if (operatorPivot != operatorPivot2) 
 				replSize = 4;
 			
-			for (int i = 0; i < replSize; ++i) {
-				while (subToken.find(stripMatches[i]) != std::string::npos) {
-					subToken.replace(subToken.find(stripMatches[i]), 2, stripReplaces[i]);
+			for (int j = 0; j < replSize; ++j) {
+				while (subToken.find(stripMatches[j]) != std::string::npos) {
+					subToken.replace(subToken.find(stripMatches[j]), 2, stripReplaces[j]);
 				}
 			}
 			//// 
@@ -439,7 +444,6 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			fullToken->replace(beginPos,termPos-beginPos,tokID);
 			
 			if (SHOW_DEBUGGING) std::cout << "precedenceHandler:: level " << tokID << ": " << subToken <<std::endl; //TMP
-			
 		}
 		
 	}

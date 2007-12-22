@@ -200,26 +200,26 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 	if (catalyst == "-1") {catalyst = tGroup->catalyst;}
 	std::string catalystCpy = ""; catalystCpy = catalyst;
 	FuncObj * thisObj = NULL;
-
+	
 	std::vector<std::string> tVecVocab, tVecParams, tVecTypes;
-
+	
 	while (catalystCpy.find('«') != std::string::npos && catalystCpy.find('»',catalystCpy.find('«')) != std::string::npos) {
 		bool isOperator = false;
 		std::string tokID = "", levelType = "ValueOf", levelData = "", postfixFuncData = "";
 		int sIndex = 0, eIndex = 0, tokArry[2];
-
+		
 		sIndex = (catalystCpy.find('«'));
 		if (sIndex != std::string::npos)
 			eIndex = (catalystCpy.find('»',sIndex));
 		if (eIndex == std::string::npos) {std::cout << "CRITERROR :: Malformation: Token mismatch " <<std::endl;exit(1);}
 		tokID = catalystCpy.substr(sIndex,eIndex-sIndex+1);
 		catalystCpy.replace(sIndex,eIndex-sIndex+1,"^");
-
+		
 		if (parseTokID(tokID,tokArry) == false) {std::cout << "ERROR :: Token miss: " << tokID <<std::endl;break;} // token miss!
 		tokID = tGroup->getData(tokArry[0],tokArry[1]);
-
+		
 		if (tokID.length() <= 0) {std::cout << "ERROR: Empty token: " << tokArry[0] << "|" << tokArry[1] <<std::endl;exit(1);} // the token has nothing in it!!
-
+		
 		if (tokID.at(0) == '{' && tokID.at(tokID.length()-1) == '}') { // catch generic block declarations
 			std::string blockData = tokID.substr(1,tokID.length()-2); // look ma, no braces!
 			BlockWrap * tempBlock = new BlockWrap(blockData, environment);
@@ -253,13 +253,13 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			cPar = tokID.length();
 			levelType = tokID.substr(0,oPar);
 			if (oPar < tokID.length() && tokID.at(oPar) == ' ') {++oPar;} // don't include a leading space
-
+			
 			if (oPar < cPar) levelData = tokID.substr(oPar,cPar-oPar);
 			else levelData = ""; // no parameters
 		}
 		else if (tokID.at(0) == '-' || tokID.at(0) == '+' || tokID.at(0) == '!'
-				|| tokID.find('+') != std::string::npos && tokID.at( tokID.find('+')+1 ) == '+'
-				|| tokID.find('-') != std::string::npos && tokID.at( tokID.find('-')+1 ) == '-') { // handles the unaries, pre-mods and logic. neg. separately
+				|| tokID.find('+') != std::string::npos && tokID.find('+')+1 < tokID.length() && tokID.at( tokID.find('+')+1 ) == '+'
+				|| tokID.find('-') != std::string::npos && tokID.find('-')+1 < tokID.length()  && tokID.at( tokID.find('-')+1 ) == '-') { // handles the unaries, pre-mods and logic. neg. separately
 			levelType = "";
 			levelData = tokID;
 		}
@@ -273,16 +273,33 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			levelData = tokID.substr(oPar+1,cPar-oPar-1);
 		}
 		else {
-			levelType = "ValueOf";
-			levelData = tokID;
+			
+			int tmp = 0;
+			while (  tmp+1 < tokID.length() && (tmp = tokID.find_first_of("&|",tmp+1)) != std::string::npos && tmp+1 < tokID.length() && tokID.at(tmp+1) != tokID.at(tmp) ) // get the && and || operators (after position 0) 
+				++tmp;
+			
+			if ( tmp+1 < tokID.length() && ( tokID.at(tmp) == '&' || tokID.at(tmp) == '|' ) && tokID.at(tmp+1) == tokID.at(tmp) ) { // we found a && or || 
+				int oOp, eOp;
+				char oper = tokID.at( tmp );
+				if (tokID.at( tmp+1 ) == oper)
+					++tmp;
+				oOp = tmp;
+				eOp = tokID.length();
+				levelType = tokID.substr(0,oOp+1);
+				levelData = tokID.substr(oOp+1,eOp-oOp-1);
+			}
+			else {
+				levelType = "ValueOf";
+				levelData = tokID;
+			}
 		}
-
-
-
+		
+		
+		
 		// ACTUALLY DO THE OBJECT CREATION (SET UP) HERE //
 		if (thisObj == NULL && tVecVocab.size() == 0) {
-
-
+			
+			
 			// IF HANDLER //
 			if ( levelType == "If" || levelType == "ElseIf" ) {
 				if (SHOW_DEBUGGING) std::cout << "IF BLOCK: " << levelData <<std::endl;
@@ -387,9 +404,47 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				tGroup->openIfBlock = false;
 			}
 			// END IF HANDLING //
-
-
-
+			
+			
+			
+			// LAZY && and || operators //
+			if ( levelType.length() > 3 && (levelType.at(levelType.length()-1) == '&' && levelType.at(levelType.length()-2) == '&' 
+					|| levelType.at(levelType.length()-1) == '|' && levelType.at(levelType.length()-2) == '|') ){
+				std::string returnValue = "";
+				
+				char type = levelType.at(levelType.length()-1);
+				levelType = levelType.substr(0,levelType.length()-2); // trim operator off of end 
+				
+				if (levelType.find('«') != std::string::npos) {
+					levelType = runTokenStruct(environment,tGroup,levelType); 
+				}
+				int varDataL =  (int) tools::stringToInt(  tools::prepareVectorData(&environment->dataStructure, levelType)  );
+				
+				if (varDataL != 0 && type == '&' || varDataL == 0 && type == '|') {
+					if (levelData.find('«') != std::string::npos) {
+						levelData = runTokenStruct(environment,tGroup,levelData); 
+					}
+					int varDataR =  (int) tools::stringToInt(  tools::prepareVectorData(&environment->dataStructure, levelData)  );
+					
+					if (varDataR != 0) returnValue = "1";
+					else returnValue = "0";
+				}
+				else if (varDataL == 1 && type == '|') {returnValue = "1";}
+				else {returnValue = "0";} // varDataL == 0 && type == '&'
+				
+				
+				// turn return string into a variable 
+				std::string tokenQualifier = environment->dataStructure.variableReferencer("_STRING_");
+				environment->dataStructure.addVariable(tokenQualifier,returnValue, -1, true);
+				tokenQualifier.insert(0,"$");
+				levelType = "ValueOf";
+				levelData = tokenQualifier;
+			}
+			// END LAZY // 
+			
+			
+			
+			// OPERATORS (other) // 
 			if (levelType.length() > 1 &&
 					(levelType == "Local" || levelType == "My" || levelType == "ValueOf" || levelType.at(levelType.length()-1) == '='
 					|| levelType.at(levelType.length()-1) == '*' || levelType.at(levelType.length()-1) == '-' || levelType.at(levelType.length()-1) == '<'
@@ -400,10 +455,13 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 					thisObj = instantSTDL(&levelType, &postfixFuncData, environment); // create it immediately (don't bother with matching)  ... levelType -> postfixFuncData for operators 
 					isOperator = true;
 			}
-
+			// END OPERATORS //
+			
+			
+			
 			sIndex = (catalystCpy.find('^'));
 			catalystCpy.replace(sIndex,1,"~");
-
+			
 			 // grab prefixed result and store in postfixFuncData for parsing later ... remove prefixed data
 			if (isOperator == false && environment->methodStructure.isPostFixFunc(levelType) == true) {
 				int sIndex = (catalystCpy.rfind('%',catalystCpy.find('~'))), eIndex = catalystCpy.find('~'); // go for the gusto

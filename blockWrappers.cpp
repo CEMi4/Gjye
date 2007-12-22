@@ -41,8 +41,7 @@
 	
 	
 	std::string BlockWrap::executeCode() {
-		TokenGroup * sovtGroup = new TokenGroup, 
-			* tGroup = NULL;
+		TokenGroup * sovtGroup = new TokenGroup /*, * tGroup = NULL*/ ;
 		
 		this->tokenizeBlocks(sovtGroup); // tokenize blocks (now so we don't have token overlap in blocks later) 
 		
@@ -67,11 +66,11 @@
 			}
 			
 			if (singleInput != "") {
-				tGroup = new TokenGroup(sovtGroup); // (shallow) copy 
-				create::createTokenStruct(singleInput,tGroup);
-				if (SHOW_DEBUGGING) {std::cout << "\n\ncatalyst -> " << tGroup->catalyst <<std::endl;}
+				//tGroup = new TokenGroup(sovtGroup); // (shallow) copy 
+				create::createTokenStruct(singleInput,sovtGroup);
+				if (SHOW_DEBUGGING) {std::cout << "\n\ncatalyst -> " << sovtGroup->catalyst <<std::endl;}
 				
-				exec::runTokenStruct(this->environment, tGroup);
+				exec::runTokenStruct(this->environment, sovtGroup);
 				
 				if (SHOW_DEBUGGING) {
 					std::cout << "\n\n=======================================\n\n" 
@@ -82,10 +81,10 @@
 				singleInput = "";
 				
 				// blindly update If states 
-				sovtGroup->openIfBlock = tGroup->openIfBlock;
-				sovtGroup->insideIfBlock = tGroup->insideIfBlock;
+				//sovtGroup->openIfBlock = tGroup->openIfBlock;
+				//sovtGroup->insideIfBlock = tGroup->insideIfBlock;
 				
-				if (tGroup != NULL) {delete tGroup;}
+				//if (tGroup != NULL) {delete tGroup;}
 			}
 		}
 		

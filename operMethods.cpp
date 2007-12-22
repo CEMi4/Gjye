@@ -54,68 +54,72 @@
 		bool scalarL = false, scalarR = false;
 		VariableStorage * rightVector = NULL, * leftVector = NULL;
 		
-		if (vocab["left"].at(0) == '%') {
-			std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
-			leftVector = dataStructure->vecStringToVector(&varDataL);
-			varDataL = tools::prepareVectorData(dataStructure, varDataL);
-			if (leftVector->type(varDataL) == 0) {scalarL = true;}
-			leftVector = leftVector->getVector(varDataL); // jump in prep for VECTOR combination (though we may not need it) 
-		}
-		
-		if (vocab["right"].at(0) == '%') {
-			std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
-			rightVector = dataStructure->vecStringToVector(&varDataR);
-			varDataR = tools::prepareVectorData(dataStructure, varDataR);
-			if (rightVector->type(varDataR) == 0) {scalarR = true;}
-			rightVector = rightVector->getVector(varDataR); // jump in prep for VECTOR combination (though we may not need it) 
-		}
-		
-		if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // addition/concatenation (SCALAR)
-			std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-1));
-			std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
-			
-			if (varDataL == "") {varDataL = "0";} // positive then
-			
-			if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) { // addition 
-				double doubleDataL,doubleDataR;
-				doubleDataL =  tools::stringToInt(varDataL);
-				doubleDataR =  tools::stringToInt(varDataR);
-				returnValue = tools::intToString(doubleDataL + doubleDataR);
-			}
-			else { // concatenation
-				returnValue = varDataL.append(varDataR);
+		if (vocab["right"].length() < 2) 
+			std::cout << "WARNING :: Addition: Malformed Right Operand (len)!" <<std::endl; // the (right) operand isn't there ... 
+		else {
+			if (vocab["left"].at(0) == '%') {
+				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
+				leftVector = dataStructure->vecStringToVector(&varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				if (leftVector->type(varDataL) == 0) {scalarL = true;}
+				leftVector = leftVector->getVector(varDataL); // jump in prep for VECTOR combination (though we may not need it) 
 			}
 			
-			// turn return string into a variable 
-			tokenQualifier = dataStructure->variableReferencer("_STRING_");
-			dataStructure->addVariable(tokenQualifier,returnValue, -1, true);
-			tokenQualifier.insert(0,"$");
-		}
-		else if (!(scalarL || scalarR)) { // combination (VECTOR) 
-			tokenQualifier = dataStructure->variableReferencer("_VECTOR_");
-			dataStructure->addVector(tokenQualifier, *(new VariableStorage), -1, true); // create an empty set 
-			
-			std::map<std::string, InternalDataType *, strCmp> * leftNodes = leftVector->getVectorNodes();
-			std::map<std::string, InternalDataType *, strCmp> * rightNodes = rightVector->getVectorNodes();
-			
-			std::map<std::string, InternalDataType *>::const_iterator iter;
-			std::string addName = "";
-			for (iter = leftNodes->begin(); iter != leftNodes->end(); ++iter) {
-				if (leftVector->type() >= 0) addName = ""; else addName = iter->first;
-				if ( ((*leftNodes)[iter->first]->getType() & 3) != 0) dataStructure->getVector(tokenQualifier)->addVector( addName   , *leftVector->getVector(iter->first)    ); // it's a vector type 
-				else dataStructure->getVector(tokenQualifier)->addVariable(addName, leftVector->getData(iter->first));
+			if (vocab["right"].at(0) == '%') {
+				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
+				rightVector = dataStructure->vecStringToVector(&varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				if (rightVector->type(varDataR) == 0) {scalarR = true;}
+				rightVector = rightVector->getVector(varDataR); // jump in prep for VECTOR combination (though we may not need it) 
 			}
 			
-			for (iter = rightNodes->begin(); iter != rightNodes->end(); ++iter) {
-				if (rightVector->type() >= 0) addName = ""; else addName = iter->first;
-				if ( ((*rightNodes)[iter->first]->getType() & 3) != 0) dataStructure->getVector(tokenQualifier)->addVector(    addName, *rightVector->getVector(iter->first)    ); // it's a vector type 
-				else dataStructure->getVector(tokenQualifier)->addVariable(addName, rightVector->getData(iter->first));
+			if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // addition/concatenation (SCALAR)
+				std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-1));
+				std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+				
+				if (varDataL == "") {varDataL = "0";} // positive then
+				
+				if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) { // addition 
+					double doubleDataL,doubleDataR;
+					doubleDataL =  tools::stringToInt(varDataL);
+					doubleDataR =  tools::stringToInt(varDataR);
+					returnValue = tools::intToString(doubleDataL + doubleDataR);
+				}
+				else { // concatenation
+					returnValue = varDataL.append(varDataR);
+				}
+				
+				// turn return string into a variable 
+				tokenQualifier = dataStructure->variableReferencer("_STRING_");
+				dataStructure->addVariable(tokenQualifier,returnValue, -1, true);
+				tokenQualifier.insert(0,"$");
 			}
-			
-			tokenQualifier.insert(0,"%");
+			else if (!(scalarL || scalarR)) { // combination (VECTOR) 
+				tokenQualifier = dataStructure->variableReferencer("_VECTOR_");
+				dataStructure->addVector(tokenQualifier, *(new VariableStorage), -1, true); // create an empty set 
+				
+				std::map<std::string, InternalDataType *, strCmp> * leftNodes = leftVector->getVectorNodes();
+				std::map<std::string, InternalDataType *, strCmp> * rightNodes = rightVector->getVectorNodes();
+				
+				std::map<std::string, InternalDataType *>::const_iterator iter;
+				std::string addName = "";
+				for (iter = leftNodes->begin(); iter != leftNodes->end(); ++iter) {
+					if (leftVector->type() >= 0) addName = ""; else addName = iter->first;
+					if ( ((*leftNodes)[iter->first]->getType() & 3) != 0) dataStructure->getVector(tokenQualifier)->addVector( addName   , *leftVector->getVector(iter->first)    ); // it's a vector type 
+					else dataStructure->getVector(tokenQualifier)->addVariable(addName, leftVector->getData(iter->first));
+				}
+				
+				for (iter = rightNodes->begin(); iter != rightNodes->end(); ++iter) {
+					if (rightVector->type() >= 0) addName = ""; else addName = iter->first;
+					if ( ((*rightNodes)[iter->first]->getType() & 3) != 0) dataStructure->getVector(tokenQualifier)->addVector(    addName, *rightVector->getVector(iter->first)    ); // it's a vector type 
+					else dataStructure->getVector(tokenQualifier)->addVariable(addName, rightVector->getData(iter->first));
+				}
+				
+				tokenQualifier.insert(0,"%");
+			}
+			else {std::cout << "WARNING :: Addition: Unknown Data Type!" <<std::endl;}
 		}
-		else {std::cout << "WARNING :: Addition: Unknown Data Type!" <<std::endl;}
-		
+
 		return tokenQualifier;
 	}
 /// ### ///
@@ -169,42 +173,46 @@
 	std::string Assignation_Obj::executeCode() {
 		std::string tokenQualifier = "";
 		
-		if (vocab["left"].at(0) == '$') { // assignation (VARIABLE)
-			std::string varName = vocab["left"].substr(1,vocab["left"].length()-2), varData = tools::prepareVectorData(dataStructure, vocab["right"]);
-			dataStructure->addVariable(varName,varData);
-			tokenQualifier = "$" + varName;
-		}
-		else if (vocab["left"].at(0) == '%') { // assignation (VECTOR)
-			std::string vecData = "", vecName, vecNameCopy = vecName = vocab["left"].substr(1,vocab["left"].length()-2);
-			
-			VariableStorage * leftVector = NULL;
-			leftVector = dataStructure->vecStringToVector(&vecNameCopy, false); // jump to the vector object we want to modify (modifies vecNameCopy to make it the highest level) 
-			vecNameCopy = tools::prepareVectorData(dataStructure, vecNameCopy); // this is the highest level!  ie)  %topName[index][vecNameCopy];  or  %vecNameCopy; 
-			
-			vecData = vocab["right"].substr(1,vocab["right"].length()-1);
-			
-			if (vocab["right"].at(0) == '%') {
-				VariableStorage * rightVector = NULL;
-				rightVector = dataStructure->vecStringToVector(&vecData);
-				vecData = tools::prepareVectorData(dataStructure, vecData);
-				
-				if (rightVector->type(vecData) > 0) { // vector to vector 
-					leftVector->addVector(vecNameCopy, *rightVector->getVector(vecData));
-					tokenQualifier = "%" + vecName;
-				}
-				else if (vocab["left"].find("[") != std::string::npos) { // scalar vector, check -- it must NOT be the lowest level!  (%vec=$scalar;  is INVALID) 
-					leftVector->addVariable(vecNameCopy, rightVector->getData(vecData)); // we could to prepareVectorData(dataStructure, vocab["right"]) 
-					tokenQualifier = "%" + vecName;
-				}
-				else {std::cout << "ERROR :: Mishandling: Cannot convert scalar to vector (vec)!" <<std::endl;exit(1);}
+		if (vocab["right"].length() < 2) 
+			std::cout << "WARNING :: Assignation: Malformed Right Operand (len)!" <<std::endl; // the (right) operand isn't there ... 
+		else {
+			if (vocab["left"].at(0) == '$') { // assignation (VARIABLE)
+				std::string varName = vocab["left"].substr(1,vocab["left"].length()-2), varData = tools::prepareVectorData(dataStructure, vocab["right"]);
+				dataStructure->addVariable(varName,varData);
+				tokenQualifier = "$" + varName;
 			}
-			else if (vocab["right"].at(0) == '$' && vocab["left"].find("[") != std::string::npos) { // scalar into vector -- it must NOT be the lowest level!  (%vec=$var;  is INVALID) 
-				leftVector->addVariable(vecNameCopy, tools::prepareVectorData(dataStructure, "$" + vecData));
-				tokenQualifier = "%" + vecName;
-			} 
-			else {std::cout << "ERROR :: Mishandling: Cannot convert scalar to vector!" <<std::endl;exit(1);}
+			else if (vocab["left"].at(0) == '%') { // assignation (VECTOR)
+				std::string vecData = "", vecName, vecNameCopy = vecName = vocab["left"].substr(1,vocab["left"].length()-2);
+				
+				VariableStorage * leftVector = NULL;
+				leftVector = dataStructure->vecStringToVector(&vecNameCopy, false); // jump to the vector object we want to modify (modifies vecNameCopy to make it the highest level) 
+				vecNameCopy = tools::prepareVectorData(dataStructure, vecNameCopy); // this is the highest level!  ie)  %topName[index][vecNameCopy];  or  %vecNameCopy; 
+				
+				vecData = vocab["right"].substr(1,vocab["right"].length()-1);
+				
+				if (vocab["right"].at(0) == '%') {
+					VariableStorage * rightVector = NULL;
+					rightVector = dataStructure->vecStringToVector(&vecData);
+					vecData = tools::prepareVectorData(dataStructure, vecData);
+					
+					if (rightVector->type(vecData) > 0) { // vector to vector 
+						leftVector->addVector(vecNameCopy, *rightVector->getVector(vecData));
+						tokenQualifier = "%" + vecName;
+					}
+					else if (vocab["left"].find("[") != std::string::npos) { // scalar vector, check -- it must NOT be the lowest level!  (%vec=$scalar;  is INVALID) 
+						leftVector->addVariable(vecNameCopy, rightVector->getData(vecData)); // we could to prepareVectorData(dataStructure, vocab["right"]) 
+						tokenQualifier = "%" + vecName;
+					}
+					else {std::cout << "ERROR :: Mishandling: Cannot convert scalar to vector (vec)!" <<std::endl;exit(1);}
+				}
+				else if (vocab["right"].at(0) == '$' && vocab["left"].find("[") != std::string::npos) { // scalar into vector -- it must NOT be the lowest level!  (%vec=$var;  is INVALID) 
+					leftVector->addVariable(vecNameCopy, tools::prepareVectorData(dataStructure, "$" + vecData));
+					tokenQualifier = "%" + vecName;
+				} 
+				else {std::cout << "ERROR :: Mishandling: Cannot convert scalar to vector!" <<std::endl;exit(1);}
+			}
+			else {std::cout << "WARNING :: Assignation: Unknown Data Type!" <<std::endl;}
 		}
-		else {std::cout << "WARNING :: Assignation: Unknown Data Type!" <<std::endl;}
 		
 		return tokenQualifier;
 	}
@@ -254,53 +262,57 @@
 		bool scalarL = false, scalarR = false;
 		int type = -1, skipAmt = 1;
 		
-		if ( vocab["left"].at(vocab["left"].length()-1) == '>' ) type = 0;
-		else if ( vocab["left"].at(vocab["left"].length()-1) == '<' ) type = 1;
-		else if ( vocab["left"].at(vocab["left"].length()-2) == '>' ) {type = 2;skipAmt = 2;}
-		else if ( vocab["left"].at(vocab["left"].length()-2) == '<' ) {type = 3;skipAmt = 2;}
-		else if ( vocab["left"].at(vocab["left"].length()-2) == '=' && vocab["left"].at(vocab["left"].length()-1) == '=' ) {type = 4;skipAmt = 2;}
-		else if ( vocab["left"].at(vocab["left"].length()-2) == '!' && vocab["left"].at(vocab["left"].length()-1) == '=' ) {type = 5;skipAmt = 2;}
-		else {std::cout << "ERROR :: Compares: Unknown type!" <<std::endl;exit(1);}
-		
-		if (vocab["left"].at(0) == '%') {
-			std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-(skipAmt+1));
-			VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
-			varDataL = tools::prepareVectorData(dataStructure, varDataL);
-			if (leftVector->type(varDataL) == 0) {scalarL = true;}
-		}
-		
-		if (vocab["right"].at(0) == '%') {
-			std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
-			VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-			varDataR = tools::prepareVectorData(dataStructure, varDataR);
-			if (rightVector->type(varDataR) == 0) {scalarR = true;}
-		}
-		
-		if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // compare (SCALAR)
-			std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-skipAmt));
-			std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+		if (vocab["right"].length() < 2) 
+			std::cout << "WARNING :: Compares: Malformed Right Operand (len)!" <<std::endl; // the (right) operand isn't there ... 
+		else {
+			if ( vocab["left"].at(vocab["left"].length()-1) == '>' ) type = 0;
+			else if ( vocab["left"].at(vocab["left"].length()-1) == '<' ) type = 1;
+			else if ( vocab["left"].at(vocab["left"].length()-2) == '>' ) {type = 2;skipAmt = 2;}
+			else if ( vocab["left"].at(vocab["left"].length()-2) == '<' ) {type = 3;skipAmt = 2;}
+			else if ( vocab["left"].at(vocab["left"].length()-2) == '=' && vocab["left"].at(vocab["left"].length()-1) == '=' ) {type = 4;skipAmt = 2;}
+			else if ( vocab["left"].at(vocab["left"].length()-2) == '!' && vocab["left"].at(vocab["left"].length()-1) == '=' ) {type = 5;skipAmt = 2;}
+			else {std::cout << "ERROR :: Compares: Unknown type!" <<std::endl;exit(1);}
 			
-			if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
-				double doubleDataL,doubleDataR;
-				doubleDataL =  tools::stringToInt(varDataL);
-				doubleDataR =  tools::stringToInt(varDataR);
-				
-				if ( doubleDataL > doubleDataR ) {
-					if ( type == 0 || type == 2 || type == 5 ) returnValue = "1";
-					else returnValue = "0";
-				}
-				else if ( doubleDataL < doubleDataR ) {
-					if ( type == 0 || type == 2 || type == 4 ) returnValue = "0";
-					else returnValue = "1";
-				}
-				else { // == 
-					if ( type == 2 || type == 3 || type == 4 ) returnValue = "1";
-					else returnValue = "0";
-				}
-				
-			} else {std::cout << "WARNING :: Compares: Unknown Operation (NaN)!" <<std::endl;}
+			if (vocab["left"].at(0) == '%') {
+				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-(skipAmt+1));
+				VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				if (leftVector->type(varDataL) == 0) {scalarL = true;}
+			}
 			
-		} else {std::cout << "WARNING :: Compares: Unknown Data Type!" <<std::endl;}
+			if (vocab["right"].at(0) == '%') {
+				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
+				VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				if (rightVector->type(varDataR) == 0) {scalarR = true;}
+			}
+			
+			if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // compare (SCALAR)
+				std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-skipAmt));
+				std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+				
+				if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
+					double doubleDataL,doubleDataR;
+					doubleDataL =  tools::stringToInt(varDataL);
+					doubleDataR =  tools::stringToInt(varDataR);
+					
+					if ( doubleDataL > doubleDataR ) {
+						if ( type == 0 || type == 2 || type == 5 ) returnValue = "1";
+						else returnValue = "0";
+					}
+					else if ( doubleDataL < doubleDataR ) {
+						if ( type == 0 || type == 2 || type == 4 ) returnValue = "0";
+						else returnValue = "1";
+					}
+					else { // == 
+						if ( type == 2 || type == 3 || type == 4 ) returnValue = "1";
+						else returnValue = "0";
+					}
+					
+				} else {std::cout << "WARNING :: Compares: Unknown Operation (NaN)!" <<std::endl;}
+				
+			} else {std::cout << "WARNING :: Compares: Unknown Data Type!" <<std::endl;}
+		}
 		
 		
 		// turn return string into a variable 
@@ -355,33 +367,36 @@
 		std::string returnValue = "";
 		bool scalarL = false, scalarR = false;
 		
-		if (vocab["left"].at(0) == '%') {
-			std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
-			VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
-			varDataL = tools::prepareVectorData(dataStructure, varDataL);
-			if (leftVector->type(varDataL) == 0) {scalarL = true;}
-		}
-		
-		if (vocab["right"].at(0) == '%') {
-			std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
-			VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-			varDataR = tools::prepareVectorData(dataStructure, varDataR);
-			if (rightVector->type(varDataR) == 0) {scalarR = true;}
-		}
-		
-		if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // division (SCALAR)
-			std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-1));
-			std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+		if (vocab["right"].length() < 2) 
+			std::cout << "WARNING :: Division: Malformed Right Operand (len)!" <<std::endl; // the (right) operand isn't there ... 
+		else {
+			if (vocab["left"].at(0) == '%') {
+				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
+				VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				if (leftVector->type(varDataL) == 0) {scalarL = true;}
+			}
 			
-			if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
-				double doubleDataL,doubleDataR;
-				doubleDataL =  tools::stringToInt(varDataL);
-				doubleDataR =  tools::stringToInt(varDataR);
-				returnValue = tools::intToString(doubleDataL/doubleDataR);
-			} else {std::cout << "WARNING :: Division: Unknown Operation (NaN)!" <<std::endl;}
+			if (vocab["right"].at(0) == '%') {
+				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
+				VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				if (rightVector->type(varDataR) == 0) {scalarR = true;}
+			}
 			
-		} else {std::cout << "WARNING :: Division: Unknown Data Type!" <<std::endl;}
-		
+			if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // division (SCALAR)
+				std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-1));
+				std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+				
+				if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
+					double doubleDataL,doubleDataR;
+					doubleDataL =  tools::stringToInt(varDataL);
+					doubleDataR =  tools::stringToInt(varDataR);
+					returnValue = tools::intToString(doubleDataL/doubleDataR);
+				} else {std::cout << "WARNING :: Division: Unknown Operation (NaN)!" <<std::endl;}
+				
+			} else {std::cout << "WARNING :: Division: Unknown Data Type!" <<std::endl;}
+		}
 		
 		// turn return string into a variable 
 		std::string tokenQualifier = dataStructure->variableReferencer("_STRING_");
@@ -435,33 +450,36 @@
 		std::string returnValue = "";
 		bool scalarL = false, scalarR = false;
 		
-		if (vocab["left"].at(0) == '%') {
-			std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
-			VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
-			varDataL = tools::prepareVectorData(dataStructure, varDataL);
-			if (leftVector->type(varDataL) == 0) {scalarL = true;}
-		}
-		
-		if (vocab["right"].at(0) == '%') {
-			std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
-			VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-			varDataR = tools::prepareVectorData(dataStructure, varDataR);
-			if (rightVector->type(varDataR) == 0) {scalarR = true;}
-		}
-		
-		if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // modulus (SCALAR)
-			std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-1));
-			std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+		if (vocab["right"].length() < 2) 
+			std::cout << "WARNING :: Modulus: Malformed Right Operand (len)!" <<std::endl; // the (right) operand isn't there ... 
+		else {
+			if (vocab["left"].at(0) == '%') {
+				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
+				VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				if (leftVector->type(varDataL) == 0) {scalarL = true;}
+			}
 			
-			if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
-				double doubleDataL,doubleDataR;
-				doubleDataL =  tools::stringToInt(varDataL);
-				doubleDataR =  tools::stringToInt(varDataR);
-				returnValue = tools::intToString(fmod(doubleDataL, doubleDataR));
-			} else {std::cout << "WARNING :: Modulus: Unknown Operation (NaN)!" <<std::endl;}
+			if (vocab["right"].at(0) == '%') {
+				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
+				VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				if (rightVector->type(varDataR) == 0) {scalarR = true;}
+			}
 			
-		} else {std::cout << "WARNING :: Modulus: Unknown Data Type!" <<std::endl;}
-		
+			if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // modulus (SCALAR)
+				std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-1));
+				std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+				
+				if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
+					double doubleDataL,doubleDataR;
+					doubleDataL =  tools::stringToInt(varDataL);
+					doubleDataR =  tools::stringToInt(varDataR);
+					returnValue = tools::intToString(fmod(doubleDataL, doubleDataR));
+				} else {std::cout << "WARNING :: Modulus: Unknown Operation (NaN)!" <<std::endl;}
+				
+			} else {std::cout << "WARNING :: Modulus: Unknown Data Type!" <<std::endl;}
+		}
 		
 		// turn return string into a variable 
 		std::string tokenQualifier = dataStructure->variableReferencer("_STRING_");
@@ -515,33 +533,36 @@
 		std::string returnValue = "";
 		bool scalarL = false, scalarR = false;
 		
-		if (vocab["left"].at(0) == '%') {
-			std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
-			VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
-			varDataL = tools::prepareVectorData(dataStructure, varDataL);
-			if (leftVector->type(varDataL) == 0) {scalarL = true;}
-		}
-		
-		if (vocab["right"].at(0) == '%') {
-			std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
-			VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-			varDataR = tools::prepareVectorData(dataStructure, varDataR);
-			if (rightVector->type(varDataR) == 0) {scalarR = true;}
-		}
-		
-		if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // multiplication (SCALAR)
-			std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-1));
-			std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+		if (vocab["right"].length() < 2) 
+			std::cout << "WARNING :: Multiplication: Malformed Right Operand (len)!" <<std::endl; // the (right) operand isn't there ... 
+		else {
+			if (vocab["left"].at(0) == '%') {
+				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
+				VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				if (leftVector->type(varDataL) == 0) {scalarL = true;}
+			}
 			
-			if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
-				double doubleDataL,doubleDataR;
-				doubleDataL =  tools::stringToInt(varDataL);
-				doubleDataR =  tools::stringToInt(varDataR);
-				returnValue = tools::intToString(doubleDataL*doubleDataR);
-			} else {std::cout << "WARNING :: Multiplication: Unknown Operation (NaN)!" <<std::endl;}
+			if (vocab["right"].at(0) == '%') {
+				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
+				VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				if (rightVector->type(varDataR) == 0) {scalarR = true;}
+			}
 			
-		} else {std::cout << "WARNING :: Multiplication: Unknown Data Type!" <<std::endl;}
-		
+			if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // multiplication (SCALAR)
+				std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-1));
+				std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+				
+				if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
+					double doubleDataL,doubleDataR;
+					doubleDataL =  tools::stringToInt(varDataL);
+					doubleDataR =  tools::stringToInt(varDataR);
+					returnValue = tools::intToString(doubleDataL*doubleDataR);
+				} else {std::cout << "WARNING :: Multiplication: Unknown Operation (NaN)!" <<std::endl;}
+				
+			} else {std::cout << "WARNING :: Multiplication: Unknown Data Type!" <<std::endl;}
+		}
 		
 		// turn return string into a variable 
 		std::string tokenQualifier = dataStructure->variableReferencer("_STRING_");
@@ -595,35 +616,38 @@
 		std::string returnValue = "";
 		bool scalarL = false, scalarR = false;
 		
-		if (vocab["left"].at(0) == '%') {
-			std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
-			VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
-			varDataL = tools::prepareVectorData(dataStructure, varDataL);
-			if (leftVector->type(varDataL) == 0) {scalarL = true;}
+		if (vocab["right"].length() < 2) 
+			std::cout << "WARNING :: Subtraction: Malformed Right Operand (len)!" <<std::endl; // the (right) operand isn't there ... 
+		else {
+			if (vocab["left"].at(0) == '%') {
+				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
+				VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				if (leftVector->type(varDataL) == 0) {scalarL = true;}
+			}
+			
+			if (vocab["right"].at(0) == '%') {
+				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
+				VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				if (rightVector->type(varDataR) == 0) {scalarR = true;}
+			}
+			
+			if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // subtraction (SCALAR)
+				std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-1));
+				std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
+				
+				if (varDataL == "") {varDataL = "0";} // negative then
+				
+				if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
+					double doubleDataL,doubleDataR;
+					doubleDataL =  tools::stringToInt(varDataL);
+					doubleDataR =  tools::stringToInt(varDataR);
+					returnValue = tools::intToString(doubleDataL - doubleDataR);
+				} else {std::cout << "WARNING :: Subtraction: Unknown Operation (NaN)!" <<std::endl;} // allow difference of vectors?  (like addition has) 
+				
+			} else {std::cout << "WARNING :: Subtraction: Unknown Data Type!" <<std::endl;}
 		}
-		
-		if (vocab["right"].at(0) == '%') {
-			std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
-			VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-			varDataR = tools::prepareVectorData(dataStructure, varDataR);
-			if (rightVector->type(varDataR) == 0) {scalarR = true;}
-		}
-		
-		if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // subtraction (SCALAR)
-			std::string varDataL = tools::prepareVectorData(dataStructure, vocab["left"].substr(0,vocab["left"].length()-1));
-			std::string varDataR =  tools::prepareVectorData(dataStructure, vocab["right"]);
-			
-			if (varDataL == "") {varDataL = "0";} // negative then
-			
-			if (tools::isNumber(varDataL) && tools::isNumber(varDataR)) {
-				double doubleDataL,doubleDataR;
-				doubleDataL =  tools::stringToInt(varDataL);
-				doubleDataR =  tools::stringToInt(varDataR);
-				returnValue = tools::intToString(doubleDataL - doubleDataR);
-			} else {std::cout << "WARNING :: Subtraction: Unknown Operation (NaN)!" <<std::endl;} // allow difference of vectors?  (like addition has) 
-			
-		} else {std::cout << "WARNING :: Subtraction: Unknown Data Type!" <<std::endl;}
-		
 		
 		// turn return string into a variable 
 		std::string tokenQualifier = dataStructure->variableReferencer("_STRING_");
