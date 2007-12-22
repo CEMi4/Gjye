@@ -44,10 +44,11 @@ public:
 class ClassWrap : public MethodWrap {
 protected: 
 	MethodStack * methods;
+	std::string classType; // the name of this class 
 	std::vector<std::string> friends; // who has access to my shizz 
 	
 public:
-	ClassWrap(std::string = "", const EnviroWrap * = NULL);
+	ClassWrap(std::string = "", std::string = "", const EnviroWrap * = NULL);
 	virtual ~ClassWrap();
 	void clearMemoryStack();
 	

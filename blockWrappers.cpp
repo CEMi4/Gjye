@@ -118,9 +118,12 @@
 // class ClassWrap : public MethodWrap 
 	
 	/* public */
-	ClassWrap::ClassWrap(std::string code, const EnviroWrap * dStack) : MethodWrap(code, dStack) {
+	ClassWrap::ClassWrap(std::string className, std::string code, const EnviroWrap * dStack) : MethodWrap(code, dStack) {
 		this->methods = new MethodStack();
 		this->methods->pushStorage();
+		if (className == "") 
+			this->classType = "Object"; // general 
+		else this->classType = className;
 	}
 	ClassWrap::~ClassWrap() {
 		delete this->methods;

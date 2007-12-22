@@ -111,7 +111,7 @@ int main(int argc, char * argv[]) {
 				fullUserInput += line;
 			}
 			
-			mainObject = new ClassWrap(fullUserInput, eStack);
+			mainObject = new ClassWrap("Main", fullUserInput, eStack);
 			mainObject->executeCode();
 			delete mainObject;
 			
@@ -123,7 +123,7 @@ int main(int argc, char * argv[]) {
 		std::string fullUserInput = "";
 		ClassWrap * mainObject = NULL;
 		while (!getline(std::cin, fullUserInput).fail()) {
-			mainObject = new ClassWrap(fullUserInput, eStack);
+			mainObject = new ClassWrap("Main", fullUserInput, eStack);
 			mainObject->executeCode();
 			delete mainObject;
 			std::cout << "\n\ncmd> ";

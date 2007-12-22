@@ -185,7 +185,7 @@ void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenize
 			
 			std::string tokID = "", funcName = fullToken->substr(startFunc,endFunc-startFunc+1);
 			
-			int grabTokenCount = (funcName == "If" || funcName == "ElseIf" ? 2 : 1); // only If and ElseIf take 2 tokens 
+			int grabTokenCount = (funcName == "If" || funcName == "ElseIf" || funcName == "While" ? 2 : 1); // only If and ElseIf take 2 tokens 
 			
 			do { // grab the term to the right of the function (and keep grabbing if there's a comma (eg  Func $a, $b  =>   Func($a, $b)  ) - lists not implemented yet 
 				
