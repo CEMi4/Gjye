@@ -63,6 +63,10 @@ Else {
 	Print "Else\n".
 }
 
+
+$x = ( If 0 1 ElseIf 0 5 ElseIf 4 7 Else 111 ).
+
+
 If (1) Print 1 + "\n".
 Print "Break If segment!\n".
 ElseIf ( 1 ) Print 2.

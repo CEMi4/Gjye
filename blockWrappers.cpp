@@ -48,18 +48,25 @@
 		create::prepareTokenInput(this->environment, sovtGroup, &this->codeInput);
 		
 		std::string fullUserInput = this->codeInput, 
-			singleInput = "";
+			singleInput = "", returnValue="";
 		
 		int eIndex;
 		while (fullUserInput != "") { // exec each command given 
-			eIndex = -1;
+			eIndex = std::string::npos;
 			do {
 				eIndex = fullUserInput.find('.', eIndex+1);
-			} while (eIndex > -1 && eIndex+1 < fullUserInput.length() && isdigit(fullUserInput.at(eIndex+1)) > 0 && fullUserInput.at(eIndex+1) != '«');
+			} while (eIndex != std::string::npos && eIndex+1 < fullUserInput.length() && isdigit(fullUserInput.at(eIndex+1)) > 0 && fullUserInput.at(eIndex+1) != '«');
 			if (eIndex == std::string::npos) {eIndex = fullUserInput.length()-1;}
 			
-			singleInput = fullUserInput.substr(0,eIndex+1); // including the period if there was one 
+			int firstChar = 0;
+			while ( firstChar < fullUserInput.length() && fullUserInput.at(firstChar) == ' ')
+				++firstChar;
+			
+			singleInput = fullUserInput.substr(firstChar,eIndex+1-firstChar); // including the period if there was one 
 			fullUserInput.replace(0,eIndex+1,"");
+			
+			if (singleInput.length() == 0) 
+				continue;
 			
 			if (singleInput.at(singleInput.length()-1) == '.') {
 				singleInput = singleInput.substr(0,singleInput.length()-1); // get rid of the period 
@@ -70,7 +77,7 @@
 				create::createTokenStruct(singleInput,sovtGroup);
 				if (SHOW_DEBUGGING) {std::cout << "\n\ncatalyst -> " << sovtGroup->catalyst <<std::endl;}
 				
-				exec::runTokenStruct(this->environment, sovtGroup);
+				returnValue = exec::runTokenStruct(this->environment, sovtGroup);
 				
 				if (SHOW_DEBUGGING) {
 					std::cout << "\n\n=======================================\n\n" 
@@ -90,7 +97,9 @@
 		
 		delete sovtGroup;
 		
-		return "";
+		returnValue = tools::prepareVectorData( &this->environment->dataStructure, returnValue );
+		
+		return returnValue;
 	}
 	
 /// ################################ ///
