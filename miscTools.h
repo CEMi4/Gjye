@@ -13,7 +13,7 @@ namespace tools {
 	bool isInteger(std::string);
 	
 	std::string xToDec(std::string, std::string);
-	std::string prepareVectorData(DataStorageStack *, std::string);
+	std::string prepareVectorData(DataStorageStack *, std::string, bool = true);
 	std::string cleanEscapes(std::string);
 	std::string taintEscapes(std::string);
 }

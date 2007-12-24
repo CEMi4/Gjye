@@ -97,7 +97,7 @@
 		
 		delete sovtGroup;
 		
-		returnValue = tools::prepareVectorData( &this->environment->dataStructure, returnValue );
+		returnValue = tools::prepareVectorData( &this->environment->dataStructure, returnValue, false );
 		
 		return returnValue;
 	}

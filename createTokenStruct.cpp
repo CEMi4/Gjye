@@ -74,7 +74,7 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 	
 	for (int mIndex = 0; mIndex < input->length(); ++mIndex) { // strip out all numbers, replacing as vars 
 		if (isdigit(input->at(mIndex)) > 0) { // numbers (to vars) -- leap forward  ---  || input->at(mIndex) == '.' removed bc we MUST have #.# and not .# 
-			std::string strData = "";
+			std::string strData = "", tokID = "";
 			int numberEnd;
 			
 			if (input->find_last_of(tokenizerStarts+" .",mIndex) != mIndex-1) continue; // it should be tokenized IMMEDIATELY before the number -- >$<_STRING_>000000 (so we don't swallow variables, tokens, etc) 
@@ -112,10 +112,9 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 			}
 			
 			if (tools::isNumber(strData) == true) {
-				std::string tokenQualifier = environment->dataStructure.variableReferencer("_STRING_");
-				environment->dataStructure.addVariable(tokenQualifier,strData, -1, true);
-				tokenQualifier.insert(0,"$");
-				input->replace(mIndex,numberEnd-mIndex,tokenQualifier);
+				tokID = "«"+tGroup->setData(strData)+"»";
+				if (SHOW_DEBUGGING) std::cout << "prepareTokenInput#:: level " << tokID << ": " << strData <<std::endl; //TMP
+				input->replace(mIndex,numberEnd-mIndex,tokID);
 			}
 		}
 	}
@@ -264,7 +263,7 @@ void highPrecedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // ha
 				// grab the left side -- beginPos 
 				if (operatorPivot-1 >= 0 && fullToken->at(operatorPivot-1) == '»') {
 					beginPos = fullToken->rfind('«', operatorPivot-1); // token (not greedy) (hopefully %vec[]) 
-				} 
+				}
 				else if (operatorPivot-1 >= 0) { // not very specific ... 
 					beginPos = fullToken->find_last_not_of(validKeyChars,operatorPivot-1);
 				}
@@ -368,7 +367,8 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			
 			if (operatorPivotTemp-1 >= 0 && fullToken->at(operatorPivotTemp-1) == '»') {
 				beginPos = fullToken->find_last_not_of(validTokenChars,operatorPivotTemp-1)+1; // token -- greedy (take all tokens before it!)
-			} 
+				//beginPos = fullToken->rfind('«', operatorPivot-1); // token (not greedy)
+			}
 			else if (operatorPivotTemp-1 >= 0) {
 				beginPos = fullToken->find_last_not_of(validKeyChars,operatorPivotTemp-1);
 				if (beginPos != std::string::npos && fullToken->at(beginPos) != '$' && fullToken->at(beginPos) != '%') {++beginPos;} // don't snag unless it declares variable type
@@ -404,6 +404,7 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			
 			if (operatorPivotTemp+1 < fullToken->length() && fullToken->at(operatorPivotTemp+1) == '«') {
 				termPos = fullToken->find_first_not_of(validTokenChars,operatorPivotTemp+1); // token -- greedy (take all tokens after it!) +1 
+				//termPos = fullToken->find_first_of("»",operatorPivotTemp+1)+1; // token (not greedy) 
 			} 
 			else if (operatorPivotTemp+2 < fullToken->length() && (fullToken->at(operatorPivotTemp+1) == '$' || fullToken->at(operatorPivotTemp+1) == '%')) {
 				termPos = fullToken->find_first_not_of(validKeyChars,operatorPivotTemp+2); // 2 because operators are not of validKeyChars +1 

@@ -52,29 +52,31 @@ class VariableStorage {
 protected: 
 	std::map<std::string, InternalDataType *, strCmp> dataNames; // must be a pointer for mult. references 
 	
-	mutable int startVariableReference; // 1000000000 -- hopefully find a better way than this later 
+	int startVariableReference; // 1000000000 -- hopefully find a better way than this later 
 	int arrayAutoIndex;
 	
 	// all of these methods will be called in the CORRECT level already (bc of getVector) 
 	
 	void refresh(bool = false);
 	
+	void garbageCollect();
+	
 public: 
 	VariableStorage(int = 0);
 	VariableStorage(const VariableStorage *);
 	~VariableStorage();
 	
-	std::string variableReferencer(std::string) const;
+	std::string variableReferencer(std::string);
 	
 	bool addVector(std::string, const VariableStorage &, int = -1);
 	bool addVariable(std::string = "", std::string = "", int = -1);
 	
-	VariableStorage * getVector(std::string);
-	VariableStorage * vecStringToVector(std::string *, bool = true, bool = false);
-	
 	bool removeVariable(std::string);
 	
-	std::string getData(std::string) const;
+	VariableStorage * getVector(std::string, bool = true);
+	VariableStorage * vecStringToVector(std::string *, bool = true, bool = false);
+	
+	std::string getData(std::string, bool = true);
 	std::map<std::string, InternalDataType *, strCmp> * getVectorNodes();
 	std::string dumpData() const;
 	
@@ -103,13 +105,12 @@ public:
 	bool addVector(std::string, const VariableStorage &, int = -1, bool = false);
 	bool addVariable(std::string = "", std::string = "", int = -1, bool = false);
 	
-	
-	VariableStorage * getVector(std::string);
-	VariableStorage * vecStringToVector(std::string *, bool = true, bool = false);
-	
 	bool removeVariable(std::string);
 	
-	std::string getData(std::string) const;
+	VariableStorage * getVector(std::string, bool = true);
+	VariableStorage * vecStringToVector(std::string *, bool = true, bool = false);
+	
+	std::string getData(std::string, bool = true);
 	std::map<std::string, InternalDataType *, strCmp> * getVectorNodes();
 	std::string dumpData() const;
 	
@@ -120,7 +121,7 @@ public:
 	
 	void pushStorage(VariableStorage * = NULL);
 	
-	int stackSize() {return this->dataStack.size();}
+	int stackSize() const;
 };
 /// ################################ ///
 

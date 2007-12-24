@@ -43,8 +43,8 @@
 		this->references = idt->references;
 		if ( idt->dataValue != NULL ) {
 			if ( idt->validType == 0 ) this->dataValue = (void *) new std::string( *((std::string *) idt->dataValue) );
-			else if ( (idt->validType ^ 4) == 0 ) this->dataValue = (void *) &( *(  (int *) idt->dataValue ));
-			else if ( (idt->validType ^ 8) == 0 ) this->dataValue = (void *) &( *(  (double *) idt->dataValue ));
+			else if ( (idt->validType ^ 4) == 0 ) {this->dataValue = (void *) new int; *((int *)this->dataValue) = *((int *)idt->dataValue);}
+			else if ( (idt->validType ^ 8) == 0 ) {this->dataValue = (void *) new double; *((double *)this->dataValue) = *((double *)idt->dataValue);}
 			else if ( (idt->validType & 3) != 0 ) this->dataValue = (void *) new VariableStorage( (VariableStorage *) idt->dataValue ); // assume it's an array or vector otherwise 
 			else if (SHOW_DEBUGGING) std::cout << "WARNING: Could not clone an unknown internal data type: " << idt->validType << std::endl;
 		}
@@ -62,12 +62,26 @@
 	
 	
 	void InternalDataType::setData( void * newValue, int newType ) {
+		if ( this->dataValue != NULL ) {
+			if ( this->validType == 0 ) delete (std::string *) this->dataValue;
+			else if ( (this->validType ^ 4) == 0 ) delete (int *) this->dataValue;
+			else if ( (this->validType ^ 8) == 0 ) delete (double *) this->dataValue;
+			else if ( (this->validType & 3) != 0 ) delete (VariableStorage *) this->dataValue; // assume it's an array or vector otherwise 
+			else if (SHOW_DEBUGGING) std::cout << "WARNING: Could not destroy an unknown internal data type: " << this->validType << std::endl;
+			this->dataValue = NULL;
+		}
 		this->dataValue = newValue;
 		this->validType = newType;
 	}
 	
 	void InternalDataType::upRef() {++this->references;}
-	void InternalDataType::downRef() {--this->references;}
+	void InternalDataType::downRef() {
+		--this->references;
+		if (this->references < 0) {
+			std::cout << "WARNING: Attempted reference lowering below 0!" << std::endl;
+			this->references = 0;
+		}
+	}
 	
 	
 	int InternalDataType::getRefs() const {return this->references;}
@@ -101,6 +115,19 @@
 		} else {this->arrayAutoIndex = 0;}
 	}
 	
+	void VariableStorage::garbageCollect() {
+		if (this->dataNames.size() > 0) {
+			std::map<std::string, InternalDataType *>::reverse_iterator iter = this->dataNames.rbegin();
+			for (; iter != this->dataNames.rend(); ++iter) {
+				if ( this->dataNames[iter->first]->getRefs() == 0 ) {
+					delete this->dataNames[iter->first];
+					this->dataNames[iter->first] = NULL;
+					this->dataNames.erase(iter->first);
+				}
+			}
+		}
+	}
+	
 	
 	
 	/* public */ 
@@ -129,7 +156,7 @@
 	}
 	
 	
-	std::string VariableStorage::variableReferencer(std::string header) const { // create a unique (generic) variable name
+	std::string VariableStorage::variableReferencer(std::string header) { // create a unique (generic) variable name
 		std::ostringstream outs;
 		char varRef[16];
 		sprintf(varRef,"%.10i",this->startVariableReference); // 0 left-padded, 10 digits long 
@@ -157,11 +184,13 @@
 			
 			this->dataNames[thisName] = new InternalDataType( new VariableStorage( &vector ), (vector.arrayAutoIndex >= 0) ? 1 : 2 );
 			this->refresh();
+			this->garbageCollect();
 			return true;
 		}
 		else if (thisName != "") { // vector/tree
 			this->dataNames[thisName] = new InternalDataType( new VariableStorage( &vector ), (vector.arrayAutoIndex >= 0) ? 1 : 2 );
 			this->arrayAutoIndex = -1; // taint array
+			this->garbageCollect();
 			return true;
 		}
 		else {std::cout << "WARNING :: Mishandling: Cannot push onto a tainted array!" <<std::endl;}
@@ -186,68 +215,17 @@
 			
 			this->dataNames[thisName] = new InternalDataType( new std::string( thisData ), 0 );
 			this->refresh();
+			this->garbageCollect();
 			return true;
 		} // push onto an array
 		else if (thisName != "") { // push a scalar on a vector
 			this->dataNames[thisName] = new InternalDataType( new std::string( thisData ), 0 );
 			this->arrayAutoIndex = -1; // taint array
+			this->garbageCollect();
 			return true;
 		}
 		else {std::cout << "WARNING :: Mishandling: Cannot push onto a tainted array!" <<std::endl;}
 		return false;
-	}
-	
-	
-	VariableStorage * VariableStorage::getVector(std::string thisName) { // give me an object if i give you a base 
-		if (this->variableExists(thisName) == false) {std::cout << "ERROR :: DNE: getVector("  << thisName << ")!" <<std::endl;exit(1);} // otherwise die 
-		
-		if ( (this->dataNames.find(thisName)->second->getType() & 3) != 0) {
-			return (VariableStorage *) this->dataNames.find(thisName)->second->getValue();
-		}
-		else {std::cout << "WARNING:: Scalar: getVector("  << thisName << ") is scalar!" <<std::endl;return NULL;} // we can't grab a scalar foo! 
-	}
-	
-	
-	// convert a vector STRING (eg. VEC[1][2])  into the baseline object (and vecName becomes the highest level -- eg. 2).  uses getVector
-	VariableStorage * VariableStorage::vecStringToVector(std::string * vecName, bool checkBaseExistence, bool returnNullOnNonExistance) {
-		VariableStorage * returnVector = this;
-		if (*vecName == "") return returnVector;
-		
-		int lIndex = vecName->find_first_not_of(validKeyChars);
-		if (lIndex == std::string::npos) {lIndex = vecName->length()-1;}
-		
-		if (vecName->at(lIndex) == '[') { // it's not a simple vector (%vecName) 
-			if (returnNullOnNonExistance && returnVector->variableExists(vecName->substr(0, lIndex)) == false) return NULL; // return NULL instead of dying from a getVector call
-			returnVector = returnVector->getVector(vecName->substr(0, lIndex)); // jump! 
-			vecName->erase(0, lIndex);
-			
-			int oBrac = 0, nIndex = 0; // number brackets open, current index 
-			while (nIndex < vecName->length() && (oBrac > 0 || vecName->at(nIndex) == '[')) {
-				if (vecName->at(nIndex) == '[') {++oBrac;++nIndex;}
-				else if (vecName->at(nIndex) == ']') {
-					--oBrac;
-					if (oBrac == 0) {
-						if (nIndex == vecName->length()-1) { // this is the highest level (stop, change vecName and don't jump!) 
-							*vecName = vecName->substr(1, nIndex-1);
-							break;
-						} else {
-							if (returnNullOnNonExistance && returnVector->variableExists(vecName->substr(1, nIndex-1)) == false) return NULL;
-							DataStorageStack * tmpDSS = new DataStorageStack(this); // just a temp wrapper 
-							returnVector = returnVector->getVector(tools::prepareVectorData(tmpDSS, vecName->substr(1, nIndex-1))); // jump!  
-							delete tmpDSS;
-							vecName->erase(0, nIndex+1);
-							nIndex = 0;
-						}
-					} else {++nIndex;}
-				} else {++nIndex;}
-			}
-			
-		} else { // if it's a simple vector, make sure it exists! 
-			if (checkBaseExistence && this->variableExists(*vecName) == false) {std::cout << "ERROR :: DNE: vecStringToVector("  << *vecName << ")!" <<std::endl;exit(1);} // otherwise die 
-			else if (returnNullOnNonExistance && returnVector->variableExists(*vecName) == false) return NULL;
-		}
-		
-		return returnVector;
 	}
 	
 	
@@ -266,10 +244,70 @@
 	}
 	
 	
-	std::string VariableStorage::getData(std::string thisName) const { // use getVector first to jump to the level! 
+	VariableStorage * VariableStorage::getVector(std::string thisName, bool purgeTransient) { // give me an object if i give you a base 
+		if (this->variableExists(thisName) == false) {std::cout << "ERROR :: DNE: getVector("  << thisName << ")!" <<std::endl;exit(1);} // otherwise die 
+		
+		if ( (this->dataNames.find(thisName)->second->getType() & 3) != 0) {
+			VariableStorage * tmp = NULL;
+			tmp = (VariableStorage *) this->dataNames.find(thisName)->second->getValue();
+			if (purgeTransient && thisName.at(0) == '_') {this->dataNames.find(thisName)->second->downRef();}
+			return tmp;
+		}
+		else {std::cout << "WARNING:: Scalar: getVector("  << thisName << ") is scalar!" <<std::endl;return NULL;} // we can't grab a scalar foo! 
+	}
+	
+	
+	// convert a vector STRING (eg. VEC[1][2])  into the baseline object (and vecName becomes the highest level -- eg. 2).  uses getVector
+	VariableStorage * VariableStorage::vecStringToVector(std::string * vecName, bool checkBaseExistence, bool returnNullOnNonExistance) {
+		VariableStorage * returnVector = this;
+		if (*vecName == "") return returnVector;
+		
+		int lIndex = vecName->find_first_not_of(validKeyChars);
+		if (lIndex == std::string::npos) {lIndex = vecName->length()-1;}
+		
+		if (vecName->at(lIndex) == '[') { // it's not a simple vector (%vecName) 
+			if (returnNullOnNonExistance && returnVector->variableExists(vecName->substr(0, lIndex)) == false) return NULL; // return NULL instead of dying from a getVector call
+			returnVector = returnVector->getVector(vecName->substr(0, lIndex), false); // jump! 
+			vecName->erase(0, lIndex);
+			
+			int oBrac = 0, nIndex = 0; // number brackets open, current index 
+			while (nIndex < vecName->length() && (oBrac > 0 || vecName->at(nIndex) == '[')) {
+				if (vecName->at(nIndex) == '[') {++oBrac;++nIndex;}
+				else if (vecName->at(nIndex) == ']') {
+					--oBrac;
+					if (oBrac == 0) {
+						if (nIndex == vecName->length()-1) { // this is the highest level (stop, change vecName and don't jump!) 
+							*vecName = vecName->substr(1, nIndex-1);
+							break;
+						} else {
+							if (returnNullOnNonExistance && returnVector->variableExists(vecName->substr(1, nIndex-1)) == false) return NULL;
+							DataStorageStack * tmpDSS = new DataStorageStack(this); // just a temp wrapper 
+							returnVector = returnVector->getVector(tools::prepareVectorData(tmpDSS, vecName->substr(1, nIndex-1)), false); // jump!  
+							delete tmpDSS;
+							vecName->erase(0, nIndex+1);
+							nIndex = 0;
+						}
+					} else {++nIndex;}
+				} else {++nIndex;}
+			}
+			
+		} else { // if it's a simple vector, make sure it exists! 
+			if (checkBaseExistence && this->variableExists(*vecName) == false) {std::cout << "ERROR :: DNE: vecStringToVector("  << *vecName << ")!" <<std::endl;exit(1);} // otherwise die 
+			else if (returnNullOnNonExistance && returnVector->variableExists(*vecName) == false) return NULL;
+		}
+		
+		return returnVector;
+	}
+	
+	
+	std::string VariableStorage::getData(std::string thisName, bool purgeTransient) { // use getVector first to jump to the level! 
 		if (this->variableExists(thisName) == true) {
-			if (this->dataNames.find(thisName)->second->getType() == 0) {return *( (std::string *) this->dataNames.find(thisName)->second->getValue());} // variable 
+			if (this->dataNames.find(thisName)->second->getType() == 0) {
+				if (purgeTransient && thisName.at(0) == '_') {this->dataNames.find(thisName)->second->downRef();}
+				return *( (std::string *) this->dataNames.find(thisName)->second->getValue());
+			} // variable 
 			else if ( (this->dataNames.find(thisName)->second->getType() & 3) != 0) {
+				if (purgeTransient && thisName.at(0) == '_') {this->dataNames.find(thisName)->second->downRef();}
 				return tools::intToString(  ( (VariableStorage *) this->dataNames.find(thisName)->second->getValue() )->dataNames.size());
 			} // vector - return vector size 
 			else {std::cout << "ERROR :: Unsupported Type: getData("  << thisName << ")!" <<std::endl;exit(1);} // not string or array/vector  
@@ -305,8 +343,7 @@
 		if (thisName == "") {return (this->arrayAutoIndex >= 0 ? 1 : 2);} // *this can't be a scalar! 
 		
 		if (this->variableExists(thisName)) {
-			if (this->dataNames.find(thisName)->second->getType() == 1) {return 1;} // array
-			else if (this->dataNames.find(thisName)->second->getType() == 2) {return 2;} // vector
+			if (  (this->dataNames.find(thisName)->second->getType() & 3) != 0  ) {return (this->arrayAutoIndex >= 0 ? 1 : 2);} // array/vector
 			else {return 0;} // scalar
 		}
 		else {return -1;} // DNE 
@@ -388,19 +425,31 @@
 	
 	
 	
-	VariableStorage * DataStorageStack::getVector(std::string thisName) {
+	bool DataStorageStack::removeVariable(std::string thisName) {
 		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
 		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
-			if ((*iter)->variableExists(thisName)) {return (*iter)->getVector(thisName);}
+			if ((*iter)->variableExists(thisName)) {return (*iter)->removeVariable(thisName);}
 		}
 		
-		return (*this->dataStack.rbegin())->getVector(thisName); // if all else fails, go with the top of the stack (which fails for us!) 
+		return (*this->dataStack.rbegin())->removeVariable(thisName); // if all else fails, go with the top of the stack (which fails for us!) 
+	}
+	
+	
+	
+	VariableStorage * DataStorageStack::getVector(std::string thisName, bool purgeTransient) {
+		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
+		
+		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
+			if ((*iter)->variableExists(thisName)) {return (*iter)->getVector(thisName, purgeTransient);}
+		}
+		
+		return (*this->dataStack.rbegin())->getVector(thisName, purgeTransient); // if all else fails, go with the top of the stack (which fails for us!) 
 	}
 	
 	
 	VariableStorage * DataStorageStack::vecStringToVector(std::string * thisName, bool checkBaseExistence, bool returnNullOnNonExistance) {
-		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
+		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
 		
 		int lIndex = thisName->find_first_not_of(validKeyChars);
 		if (lIndex == std::string::npos) {lIndex = thisName->length()-1;}
@@ -414,25 +463,14 @@
 	
 	
 	
-	bool DataStorageStack::removeVariable(std::string thisName) {
-		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
-		
-		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
-			if ((*iter)->variableExists(thisName)) {return (*iter)->removeVariable(thisName);}
-		}
-		
-		return (*this->dataStack.rbegin())->removeVariable(thisName); // if all else fails, go with the top of the stack (which fails for us!) 
-	}
-	
-	
-	std::string DataStorageStack::getData(std::string thisName) const {
+	std::string DataStorageStack::getData(std::string thisName, bool purgeTransient) {
 		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
 		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
-			if ((*iter)->variableExists(thisName)) {return (*iter)->getData(thisName);}
+			if ((*iter)->variableExists(thisName)) {return (*iter)->getData(thisName, purgeTransient);}
 		}
 		
-		return (*this->dataStack.rbegin())->getData(thisName); // if all else fails, go with the top of the stack (which fails for us!) 
+		return (*this->dataStack.rbegin())->getData(thisName, purgeTransient); // if all else fails, go with the top of the stack (which fails for us!) 
 	}
 	
 	
@@ -488,6 +526,8 @@
 		if (vStore == NULL) this->dataStack.push_back(new VariableStorage(-1));
 		else this->dataStack.push_back(vStore);
 	}
+	
+	int DataStorageStack::stackSize() const {return this->dataStack.size();}
 	
 /// ################################ ///
 

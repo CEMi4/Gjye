@@ -64,7 +64,21 @@ Else {
 }
 
 
-$x = ( If 0 1 ElseIf 0 5 ElseIf 4 7 Else 111 ).
+Print ( 
+	If (0) {1.} 
+	ElseIf 0 5 ElseIf 4 7 Else 111 
+	) 
+	+ '\n'.
+
+
+If (1) {
+	$x=0.
+	While ($x < "10") {
+		Print $x.
+		++$x.
+	}
+} ElseIf ( 1 ) Print 2.
+Else Print 3.
 
 
 If (1) Print 1 + "\n".

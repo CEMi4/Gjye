@@ -181,12 +181,15 @@
 	MethodStack::~MethodStack() {}
 	void MethodStack::clearMemory() {
 		std::vector<MethodStorage *>::reverse_iterator iter = this->methodStack.rbegin();
-		for (; iter != this->methodStack.rend(); ++iter) 
+		for (; iter != this->methodStack.rend(); ++iter) {
 			(*iter)->clearMemory();
+			delete *iter;
+		}
 	}
 	void MethodStack::pop() {
 		std::vector<MethodStorage *>::reverse_iterator iter = this->methodStack.rbegin();
 		(*iter)->clearMemory(); // destroy 
+		delete *iter;
 		this->methodStack.pop_back(); // remove  
 	}
 	

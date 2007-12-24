@@ -98,18 +98,17 @@ std::string runVectorStruct(EnviroWrap * environment, TokenGroup * tGroup, std::
 				
 				if (vectorStorage->type(tokenDataTmp) == 0) { // it's actually a scalar
 					tokenData = tools::prepareVectorData(&environment->dataStructure, tokenData); // get the _actual_ value (replace vars, etc.)
-					environment->dataStructure.getVector(tokenQualifier)->addVariable(headerName, tokenData);
+					environment->dataStructure.getVector(tokenQualifier, false)->addVariable(headerName, tokenData);
 				}
 				else {
-					vectorStorage = vectorStorage->getVector(tokenDataTmp);
-					environment->dataStructure.getVector(tokenQualifier)->addVector(headerName, *vectorStorage);
+					vectorStorage = vectorStorage->getVector(tokenDataTmp, false);
+					environment->dataStructure.getVector(tokenQualifier, false)->addVector(headerName, *vectorStorage);
 				}
-				
 				
 			}
 			else { // add a variable to this vector
 				tokenData = tools::prepareVectorData(&environment->dataStructure, tokenData); // get the _actual_ value (replace vars, etc.)
-				environment->dataStructure.getVector(tokenQualifier)->addVariable(headerName, tokenData);
+				environment->dataStructure.getVector(tokenQualifier, false)->addVariable(headerName, tokenData);
 			}
 			
 			catalystCpy.replace(0,delimiter+1,"");
@@ -227,7 +226,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			
 			BlockWrap * tempBlock = new BlockWrap(blockData, environment);
 			if (SHOW_DEBUGGING) std::cout << "\n=-=-=-=-=-=-=-=-=-= ENTERING BLOCK =-=-=-=-=-=-=-=-=-=\n  contents: >>" << blockData << "<<" <<std::endl;
-			returnValue = tempBlock->executeCode(); // NOTE!!!:  anything coming back from a block is NOT in an acceptable form ...  {$x.} returns the _raw_ value of $x 
+			returnValue = tempBlock->executeCode();
 			delete tempBlock;
 			
 			std::string tokenQualifier = environment->dataStructure.variableReferencer("_STRING_"); // save the return value to a temp value, then return THAT 
@@ -244,7 +243,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			catalystCpy.replace(catalystCpy.find('^'),1,runVectorStruct(environment,tGroup,tokID));
 			continue; // let runVectorStruct take care of everything thereafter (it can call on us if it wants)
 		}
-		else if (tokID.at(0) == '"' && tokID.at(tokID.length()-1) == '"' || tokID.at(0) == '\'' && tokID.at(tokID.length()-1) == '\'') { // catch strings! (cleanEscapes)
+		else if (tokID.at(0) == '"' && tokID.at(tokID.length()-1) == '"' || tokID.at(0) == '\'' && tokID.at(tokID.length()-1) == '\'' || tools::isNumber(tokID) == true) { // catch strings and numbers! (cleanEscapes)
 			std::string tokenQualifier = environment->dataStructure.variableReferencer("_STRING_");
 			tokID = tools::prepareVectorData(&environment->dataStructure, tokID); // auto cleanEscapes
 			if (SHOW_DEBUGGING) std::cout << "STRING :: " << tokID << " into " << tokenQualifier <<std::endl;
@@ -310,7 +309,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				if (SHOW_DEBUGGING) std::cout << "WHILE BLOCK: " << levelData <<std::endl;
 				
 				// GRAB EXPRESSION //
-				std::string tokIDSub = "", ifReturnExpr = "", ifReturnValue = "", returnValue = "";
+				std::string tokIDSub = "", ifReturnExpr = "", ifReturnValue = "", returnValue = "", ifReturnRaw = "";
 				int sIndexSub = 0, eIndexSub = 0;
 				
 				if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == ' ') ++sIndexSub; // we allow a space, but ignore it (jump over it)
@@ -324,6 +323,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				ifReturnExpr = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
+				if ( ifReturnExpr.length() < 1 ) {std::cout << "CRITERROR :: Malformation: While expression (too few tokens - expr)" <<std::endl;exit(1);}
 				// END GRAB EXPRESSION //
 				
 				
@@ -341,26 +341,37 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
+				if ( tokIDSub.length() < 1 ) {std::cout << "CRITERROR :: Malformation: While expression (too few tokens - block)" <<std::endl;exit(1);}
 				// END RETRIEVE BLOCK // 
 				
 				
+				ifReturnRaw = runTokenStruct(environment,tGroup,ifReturnExpr);
+				ifReturnValue = tools::prepareVectorData( &environment->dataStructure, ifReturnRaw, false ); // retrieve expression value
+				environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
+				if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: While expression (non-numeric)" <<std::endl;exit(1);}
+				
 				// HANDLE EXPR //
 				while ( 1 ) {
-					ifReturnValue = tools::prepareVectorData( &environment->dataStructure, runTokenStruct(environment,tGroup,ifReturnExpr) ); // retrieve expression value -- taints if state
-					
-					if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: While expression " <<std::endl;exit(1);}
+					if (returnValue != "") environment->dataStructure.removeVariable( returnValue.substr(1)  ); // clean up 
 					
 					if ( (int) tools::stringToInt( ifReturnValue ) != 0 ) { // true expression
-						TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy -- don't screw up the if states
-						if (tokIDSub.at(0) == '«')
+						if (tokIDSub.at(0) == '«') {
+							TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy -- don't screw up the if states
 							returnValue = runTokenStruct(environment,tGroupCpy,tokIDSub); // execute If/ElseIf block
-						delete tGroupCpy;
-					}
-					else { // false expression
+							delete tGroupCpy;
+						}
+					} else { // false expression
 						break;
 					}
 					// END HANDLE EXPR //
 					
+					ifReturnRaw = runTokenStruct(environment,tGroup,ifReturnExpr);
+					ifReturnValue = tools::prepareVectorData( &environment->dataStructure, ifReturnRaw, false ); // retrieve expression value
+					environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
+					
+					if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: While expression (non-numeric)" <<std::endl;exit(1);}
+					
+					if ( (int) tools::stringToInt( ifReturnValue ) == 0 ) break; // do this to save the returnValue 
 				}
 				
 				// clean up //
@@ -439,14 +450,14 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 					tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 					levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
 					
-					TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy -- don't screw up the if states
-					tGroupCpy->insideIfBlock = false;
-					tGroupCpy->openIfBlock = false;
-					
-					if (tokIDSub.at(0) == '«')
+					if (tokIDSub.at(0) == '«') {
+						TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy -- don't screw up the if states
+						tGroupCpy->insideIfBlock = false;
+						tGroupCpy->openIfBlock = false;
 						returnValue = runTokenStruct(environment,tGroupCpy,tokIDSub); // execute If/ElseIf block
+						delete tGroupCpy;
+					}
 					else returnValue = tokIDSub;
-					delete tGroupCpy;
 					
 					tGroup->openIfBlock = false;
 					
@@ -494,14 +505,14 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
 				// END HANDLE EXPRESSION //
 
-				TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy  -- don't screw up the if states
-				tGroupCpy->insideIfBlock = false;
-				tGroupCpy->openIfBlock = false;
-				
-				if (tokIDSub.at(0) == '«')
+				if (tokIDSub.at(0) == '«') {
+					TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy  -- don't screw up the if states
+					tGroupCpy->insideIfBlock = false;
+					tGroupCpy->openIfBlock = false;
 					returnValue = runTokenStruct(environment,tGroupCpy,tokIDSub); // execute Else block
+					delete tGroupCpy;
+				}
 				else returnValue = tokIDSub;
-				delete tGroupCpy;
 				
 				tGroup->insideIfBlock = false;
 				tGroup->openIfBlock = false;
@@ -733,13 +744,13 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 	} // otherwise it could've been a block, if-else, etc
 	
 	
-	if (SHOW_DEBUGGING) std::cout << " OUTPUT (catcopy): " << catalystCpy <<std::endl; //TMP
-	
 	while (catalystCpy.length() > 0 && catalystCpy.at(0) == ' ') 
 		catalystCpy.erase( 0, 1 );
 	
 	while (catalystCpy.length() > 0 && catalystCpy.at( catalystCpy.length()-1 ) == ' ') 
 		catalystCpy.erase( catalystCpy.length()-1 , 1 );
+	
+	if (SHOW_DEBUGGING) std::cout << " OUTPUT (catcopy): " << catalystCpy <<std::endl; //TMP
 	
 	return catalystCpy;
 }

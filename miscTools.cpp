@@ -80,7 +80,7 @@ std::string xToDec(std::string radix, std::string operand) {
 }
 
 
-std::string prepareVectorData(DataStorageStack * dataStructure, std::string thisData) { // parse datum before using it ... includes "" and '' wrappers!!  note that %vec[a] would be tokenized, so only bottom levels can exist here! 
+std::string prepareVectorData(DataStorageStack * dataStructure, std::string thisData, bool purgeTransient) { // parse datum before using it ... includes "" and '' wrappers!!  note that %vec[a] would be tokenized, so only bottom levels can exist here! 
 	if (thisData == "") {return "";} // otherwise .at(0) kills the program 
 	
 	bool isDQ = (thisData.at(0) == '\''?false:true); // anything but single quote is considered double
@@ -117,12 +117,12 @@ std::string prepareVectorData(DataStorageStack * dataStructure, std::string this
 				
 				vectorStorage = dataStructure->vecStringToVector(&vecName); // jump to the vector object we want to modify (modifies vecName to make it the highest level) 
 				vecName = tools::prepareVectorData(dataStructure, vecName); // this is the highest level!  ie)  %topName[index][vecName];  or  %vecName; 
-				varData = vectorStorage->getData(vecName);
+				varData = vectorStorage->getData(vecName, purgeTransient);
 			} else { // variables 
 				lIndex = thisData.find_first_not_of(validKeyChars,mIndex+1);
 				if (lIndex == std::string::npos) {lIndex = thisData.length()-1;} else {--lIndex;}
 				std::string varName = thisData.substr(mIndex+1,lIndex-mIndex);
-				varData = dataStructure->getData(varName);
+				varData = dataStructure->getData(varName, purgeTransient);
 			}
 			
 			thisData.replace(mIndex,lIndex-mIndex+1,varData);
