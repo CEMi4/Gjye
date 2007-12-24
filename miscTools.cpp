@@ -116,7 +116,7 @@ std::string prepareVectorData(DataStorageStack * dataStructure, std::string this
 				std::string vecName = thisData.substr(mIndex+1,lIndex-mIndex);
 				
 				vectorStorage = dataStructure->vecStringToVector(&vecName); // jump to the vector object we want to modify (modifies vecName to make it the highest level) 
-				vecName = tools::prepareVectorData(dataStructure, vecName); // this is the highest level!  ie)  %topName[index][vecName];  or  %vecName; 
+				vecName = tools::prepareVectorData(dataStructure, vecName, purgeTransient); // this is the highest level!  ie)  %topName[index][vecName];  or  %vecName; 
 				varData = vectorStorage->getData(vecName, purgeTransient);
 			} else { // variables 
 				lIndex = thisData.find_first_not_of(validKeyChars,mIndex+1);

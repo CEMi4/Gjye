@@ -224,15 +224,17 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			std::string blockData = tokID.substr(1,tokID.length()-2); // look ma, no braces!
 			std::string returnValue = "";
 			
-			BlockWrap * tempBlock = new BlockWrap(blockData, environment);
+			BlockWrap * tempBlock = NULL;
+			tempBlock = new BlockWrap(blockData, environment);
 			if (SHOW_DEBUGGING) std::cout << "\n=-=-=-=-=-=-=-=-=-= ENTERING BLOCK =-=-=-=-=-=-=-=-=-=\n  contents: >>" << blockData << "<<" <<std::endl;
-			returnValue = tempBlock->executeCode();
+			returnValue = tempBlock->executeCode(); // note: RAW data is returned here, so it must be treated below!  
 			delete tempBlock;
 			
 			std::string tokenQualifier = environment->dataStructure.variableReferencer("_STRING_"); // save the return value to a temp value, then return THAT 
 			environment->dataStructure.addVariable(tokenQualifier,returnValue, -1, true);
 			tokenQualifier.insert(0,"$");
 			catalystCpy.replace(catalystCpy.find('^'),1,tokenQualifier);
+			if (SHOW_DEBUGGING) std::cout << "\n=-=-=-=-=-=-=-=-=-= LEAVING BLOCK =-=-=-=-=-=-=-=-=-=\n  returned: >>" << catalystCpy << "<<" <<std::endl;
 			continue;
 		}
 		else if (tokID.at(0) == '(' && tokID.at(tokID.length()-1) == ')') { // catch parens  ... OLD: tokID.find('(') != std::string::npos && tokID.find(')',tokID.find('(')) != std::string::npos
@@ -420,6 +422,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
+				if ( tokIDSub.length() < 1 ) {std::cout << "CRITERROR :: Malformation: If expression (too few tokens - expr)" <<std::endl;exit(1);}
 				
 				tGroup->insideIfBlock = false; // turn off (temporarily) for expression execution 
 				ifReturnValue = tools::prepareVectorData( &environment->dataStructure, runTokenStruct(environment,tGroup,tokIDSub) ); // retrieve expression value -- taints if state
@@ -447,8 +450,9 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 						if ( eIndexSub == std::string::npos ) eIndexSub = levelData.length();
 					}
 					
-					tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
+					tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub); // note: this overwrites the old (expr) definition ... but it doesn't matter at this point 
 					levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
+					if ( tokIDSub.length() < 1 ) {std::cout << "CRITERROR :: Malformation: If expression (too few tokens - block)" <<std::endl;exit(1);}
 					
 					if (tokIDSub.at(0) == '«') {
 						TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy -- don't screw up the if states
@@ -490,9 +494,9 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				// HANDLE EXPRESSION //
 				std::string tokIDSub = "", returnValue = "";
 				int sIndexSub = 0, eIndexSub = 0;
-
+				
 				if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == ' ') ++sIndexSub; // we allow a space, but ignore it (jump over it)
-
+				
 				if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == '«') { // it's a token
 					eIndexSub = levelData.find('»',sIndexSub)+1; // NOT GREEDY (only take one token)
 				}
@@ -500,11 +504,12 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 					eIndexSub = levelData.find_first_not_of(validKeyChars,sIndexSub+1);
 					if ( eIndexSub == std::string::npos ) eIndexSub = levelData.length();
 				}
-
+				
 				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
+				if ( tokIDSub.length() < 1 ) {std::cout << "CRITERROR :: Malformation: Else expression (too few tokens - block)" <<std::endl;exit(1);}
 				// END HANDLE EXPRESSION //
-
+				
 				if (tokIDSub.at(0) == '«') {
 					TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy  -- don't screw up the if states
 					tGroupCpy->insideIfBlock = false;
@@ -612,7 +617,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				int sIndex = (catalystCpy.rfind('%',catalystCpy.find('~'))), eIndex = catalystCpy.find('~'); // go for the gusto
 				if (sIndex == std::string::npos) sIndex = (catalystCpy.rfind('$',catalystCpy.find('~'))); // or fall back
 				if (sIndex == std::string::npos) {std::cout << "CRITERROR :: Malformation: Failure to grab prefix expression before " << levelType << "()!" <<std::endl;exit(1);}
-
+				
 				if (catalystCpy.at(eIndex-1) == ' ') --eIndex; // fix the extra space problem (not vector)
 				postfixFuncData = catalystCpy.substr(sIndex,eIndex-sIndex);
 				if (eIndex < catalystCpy.length()-1 && catalystCpy.at(eIndex) == ' ') ++eIndex; // and then put it back

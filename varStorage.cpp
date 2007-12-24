@@ -82,7 +82,9 @@
 			this->references = 0;
 		}
 	}
-	
+	void InternalDataType::nullRef() {
+		this->references = 0;
+	}
 	
 	int InternalDataType::getRefs() const {return this->references;}
 	
@@ -120,6 +122,7 @@
 			std::map<std::string, InternalDataType *>::reverse_iterator iter = this->dataNames.rbegin();
 			for (; iter != this->dataNames.rend(); ++iter) {
 				if ( this->dataNames[iter->first]->getRefs() == 0 ) {
+					//std::cout << "DESTROYED: " << iter->first << "::" << this->dataNames[iter->first]->getValue() <<std::endl;
 					delete this->dataNames[iter->first];
 					this->dataNames[iter->first] = NULL;
 					this->dataNames.erase(iter->first);
@@ -143,11 +146,11 @@
 		this->arrayAutoIndex = vSto->arrayAutoIndex;
 	}
 	VariableStorage::~VariableStorage() {
-		std::map<std::string, InternalDataType *>::const_iterator iter;
+		std::map<std::string, InternalDataType *>::iterator iter;
 		for (iter = this->dataNames.begin(); iter != this->dataNames.end(); ++iter) {
 			if (this->dataNames[iter->first] == NULL) continue;
 			this->dataNames[iter->first]->downRef(); // i'm no longer interested 
-			if (this->dataNames[iter->first]->getRefs() == 0) {
+			if ( iter->first.at(0) == '_' || this->dataNames[iter->first]->getRefs() == 0) {
 				//std::cout << "DESTROYED: " << iter->first << "::" << this->dataNames[iter->first]->getValue() <<std::endl;
 				delete this->dataNames[iter->first];
 				this->dataNames[iter->first] = NULL;
@@ -230,7 +233,10 @@
 	
 	
 	bool VariableStorage::removeVariable(std::string thisName) { // use getVector first to jump to the level! 
-		if (this->variableExists(thisName) == false) {return false;} // we can't delete what doesn't exist! 
+		if (this->variableExists(thisName) == false) {
+			std::cout << "WARNING :: DNE: removeVariable("  << thisName << ")!" <<std::endl;
+			return false;
+		} // we can't delete what doesn't exist! 
 		else {
 			this->dataNames[thisName]->downRef(); // i'm no longer interested 
 			if (this->dataNames[thisName]->getRefs() == 0) {
@@ -303,12 +309,29 @@
 	std::string VariableStorage::getData(std::string thisName, bool purgeTransient) { // use getVector first to jump to the level! 
 		if (this->variableExists(thisName) == true) {
 			if (this->dataNames.find(thisName)->second->getType() == 0) {
-				if (purgeTransient && thisName.at(0) == '_') {this->dataNames.find(thisName)->second->downRef();}
-				return *( (std::string *) this->dataNames.find(thisName)->second->getValue());
+				std::string temp = *((std::string *) this->dataNames.find(thisName)->second->getValue());
+				if (purgeTransient && thisName.at(0) == '_') {
+					this->dataNames.find(thisName)->second->downRef();
+					if ( this->dataNames[thisName]->getRefs() == 0 ) {
+						delete this->dataNames[thisName];
+						this->dataNames[thisName] = NULL;
+						this->dataNames.erase(thisName);
+					}
+				}
+				return temp;
 			} // variable 
 			else if ( (this->dataNames.find(thisName)->second->getType() & 3) != 0) {
-				if (purgeTransient && thisName.at(0) == '_') {this->dataNames.find(thisName)->second->downRef();}
-				return tools::intToString(  ( (VariableStorage *) this->dataNames.find(thisName)->second->getValue() )->dataNames.size());
+				VariableStorage * tempVS = (VariableStorage *) this->dataNames.find(thisName)->second->getValue();
+				std::string tempStr = tools::intToString(  tempVS->dataNames.size());
+				if (purgeTransient && thisName.at(0) == '_') {
+					this->dataNames.find(thisName)->second->downRef();
+					if ( this->dataNames[thisName]->getRefs() == 0 ) {
+						delete this->dataNames[thisName];
+						this->dataNames[thisName] = NULL;
+						this->dataNames.erase(thisName);
+					}
+				}
+				return tempStr;
 			} // vector - return vector size 
 			else {std::cout << "ERROR :: Unsupported Type: getData("  << thisName << ")!" <<std::endl;exit(1);} // not string or array/vector  
 		}

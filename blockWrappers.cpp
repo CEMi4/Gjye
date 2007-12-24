@@ -45,6 +45,13 @@
 		
 		this->tokenizeBlocks(sovtGroup); // tokenize blocks (now so we don't have token overlap in blocks later) 
 		
+		int start = 0;
+		while (this->codeInput.find("»", start) != std::string::npos) {
+			start = this->codeInput.find("»", start);
+			this->codeInput.replace(start, 1, "».");
+			++start;
+		}
+		
 		create::prepareTokenInput(this->environment, sovtGroup, &this->codeInput);
 		
 		std::string fullUserInput = this->codeInput, 

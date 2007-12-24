@@ -64,12 +64,6 @@ Else {
 }
 
 
-Print ( 
-	If (0) {1.} 
-	ElseIf 0 5 ElseIf 4 7 Else 111 
-	) 
-	+ '\n'.
-
 
 If (1) {
 	$x=0.

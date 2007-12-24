@@ -10,10 +10,10 @@
 	/* public */ 
 	EnviroWrap::EnviroWrap(const DataStorageStack * dss, const MethodStack * ms) {
 		if (dss == NULL) this-> dataStructure = *(new DataStorageStack);
-		else this-> dataStructure = *dss;
+		else this-> dataStructure = *(new DataStorageStack(*dss));
 		
 		if (ms == NULL) this->methodStructure = *(new MethodStack);
-		else this->methodStructure = *ms;
+		else this->methodStructure = *(new MethodStack(*ms));
 	}
 	EnviroWrap::EnviroWrap(const EnviroWrap * eStack) { // clone 
 		this->dataStructure = *(new DataStorageStack(eStack->dataStructure));

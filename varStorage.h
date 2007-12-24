@@ -40,6 +40,7 @@ public:
 	
 	void upRef();
 	void downRef();
+	void nullRef();
 	
 	int getRefs() const;
 	int getType() const;
