@@ -18,7 +18,9 @@
 		this->codeInput = code;
 		
 		if (dStack == NULL) {this->environment = new EnviroWrap();}
-		else {this->environment = new EnviroWrap(dStack);}
+		else {
+			this->environment = new EnviroWrap(dStack);
+		}
 		
 		this->environment->dataStructure.pushStorage(); // new blocks get new top level DS's
 		this->environment->methodStructure.pushStorage(); // new blocks get new TLM stacks 
@@ -115,26 +117,11 @@
 
 
 
-//################ METHOD WRAPPER ################//
-// class MethodWrap : public BlockWrap 
-	
-	/* public */
-	MethodWrap::MethodWrap(std::string code, const EnviroWrap * dStack) : BlockWrap(code, dStack) {
-		//this->isSTDL = false;
-		//dataStructure = new DataStorageStack(-1);
-	}
-	
-/// ################################ ///
-
-
-
-
-
 //################ CLASS WRAPPER ################//
 // class ClassWrap : public MethodWrap 
 	
 	/* public */
-	ClassWrap::ClassWrap(std::string className, std::string code, const EnviroWrap * dStack) : MethodWrap(code, dStack) {
+	ClassWrap::ClassWrap(std::string className, std::string code, const EnviroWrap * dStack) : BlockWrap(code, dStack) {
 		this->methods = new MethodStack();
 		this->methods->pushStorage();
 		if (className == "") 

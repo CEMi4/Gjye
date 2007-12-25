@@ -437,7 +437,7 @@
 	bool DataStorageStack::addVariable(std::string thisName, std::string thisData, int insPos, bool instantiate) {
 		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
 		
-		if (instantiate == true) {return (*iter)->addVariable(thisName, thisData, insPos);std::cout << "instant" <<std::endl;} // if we're instantiating, then we want the top of the stack 
+		if (instantiate == true) {return (*iter)->addVariable(thisName, thisData, insPos);} // if we're instantiating, then we want the top of the stack 
 		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
 			if ((*iter)->variableExists(thisName)) {return (*iter)->addVariable(thisName, thisData, insPos);}

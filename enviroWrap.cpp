@@ -9,15 +9,23 @@
 	
 	/* public */ 
 	EnviroWrap::EnviroWrap(const DataStorageStack * dss, const MethodStack * ms) {
-		if (dss == NULL) this-> dataStructure = *(new DataStorageStack);
-		else this-> dataStructure = *(new DataStorageStack(*dss));
+		if (dss == NULL) {
+			DataStorageStack * tmp = new DataStorageStack;
+			this-> dataStructure = *tmp;
+			delete tmp;
+		}
+		else this-> dataStructure = *dss;
 		
-		if (ms == NULL) this->methodStructure = *(new MethodStack);
-		else this->methodStructure = *(new MethodStack(*ms));
+		if (ms == NULL) {
+			MethodStack * tmp = new MethodStack;
+			this->methodStructure = *tmp;
+			delete tmp;
+		}
+		else this->methodStructure = *ms;
 	}
 	EnviroWrap::EnviroWrap(const EnviroWrap * eStack) { // clone 
-		this->dataStructure = *(new DataStorageStack(eStack->dataStructure));
-		this->methodStructure = *(new MethodStack(eStack->methodStructure));
+		this->dataStructure = eStack->dataStructure;
+		this->methodStructure = eStack->methodStructure;
 	}
 	EnviroWrap::~EnviroWrap() {}
 	void EnviroWrap::clearMemoryStacks() {

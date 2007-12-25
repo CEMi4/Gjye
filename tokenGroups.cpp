@@ -27,7 +27,9 @@
 		this->currLevel = 0;
 		this->insideIfBlock = false;
 		this->openIfBlock = false;
-		this->token.push_back(*new TokenLevel); // set up the zeroth one 
+		TokenLevel * tmp = new TokenLevel;
+		this->token.push_back(*tmp); // set up the zeroth one 
+		delete tmp;
 	}
 	
 	TokenGroup::TokenGroup(const TokenGroup * tg) {

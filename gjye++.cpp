@@ -30,13 +30,12 @@ bool SHOW_DEBUGGING = false; // default no
 int main(int argc, char * argv[]) {
 	srand((unsigned) time(0)); // for random generation
 	
-	
-	
 	// BUILD THE STANDARD LIBRARY //
 	EnviroWrap * eStack = new EnviroWrap();
 	FuncObj * tempObj = NULL;
 	
 	// for each object in the STDL 
+	eStack->methodStructure.pushStorage(); // add to the empty stack 
 	std::string fullSTDLibrary[] = { "Add", "CharAt", "Exit", "IndexOf", "Join", "Local", "Lc", "LcFirst", "Length", "Print", "Random", "Remove", "Reverse", "Round", "Select", "Split", "ValueOf", "contains", "beginsWith", "isDefined", "Void",        "0x0" };
 	for (int t = 0; fullSTDLibrary[t] != "0x0"; ++t) {
 		tempObj = exec::instantSTDL(&fullSTDLibrary[t]);

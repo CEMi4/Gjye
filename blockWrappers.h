@@ -31,17 +31,7 @@ public:
 
 
 
-class MethodWrap : public BlockWrap {
-protected: 
-	
-public:
-	MethodWrap(std::string = "", const EnviroWrap * = NULL);
-	
-};
-
-
-
-class ClassWrap : public MethodWrap {
+class ClassWrap : public BlockWrap {
 protected: 
 	MethodStack * methods;
 	std::string classType; // the name of this class 

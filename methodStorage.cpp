@@ -173,7 +173,7 @@
 	
 	/* public */
 	MethodStack::MethodStack() {
-		this->methodStack.push_back(new MethodStorage);
+		//this->methodStack.push_back(new MethodStorage);
 	}
 	MethodStack::MethodStack(const MethodStack * mStack) { // clone 
 		this->methodStack = mStack->methodStack;
