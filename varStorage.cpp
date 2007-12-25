@@ -185,13 +185,15 @@
 				thisName = tools::intToString(insPos);
 			} // otherwise insert as thisName (overwriting if necessary) 
 			
-			this->dataNames[thisName] = new InternalDataType( new VariableStorage( &vector ), (vector.arrayAutoIndex >= 0) ? 1 : 2 );
+			if (this->variableExists(thisName) == false) this->dataNames[thisName] = new InternalDataType( new VariableStorage( &vector ), (vector.arrayAutoIndex >= 0) ? 1 : 2 );
+			else this->dataNames[thisName]->setData( new VariableStorage( &vector ), (vector.arrayAutoIndex >= 0) ? 1 : 2 );
 			this->refresh();
 			this->garbageCollect();
 			return true;
 		}
 		else if (thisName != "") { // vector/tree
-			this->dataNames[thisName] = new InternalDataType( new VariableStorage( &vector ), (vector.arrayAutoIndex >= 0) ? 1 : 2 );
+			if (this->variableExists(thisName) == false) this->dataNames[thisName] = new InternalDataType( new VariableStorage( &vector ), (vector.arrayAutoIndex >= 0) ? 1 : 2 );
+			else this->dataNames[thisName]->setData( new VariableStorage( &vector ), (vector.arrayAutoIndex >= 0) ? 1 : 2 );
 			this->arrayAutoIndex = -1; // taint array
 			this->garbageCollect();
 			return true;
@@ -216,13 +218,15 @@
 				thisName = tools::intToString(insPos);
 			} // otherwise insert as thisName (overwriting if necessary) 
 			
-			this->dataNames[thisName] = new InternalDataType( new std::string( thisData ), 0 );
+			if (this->variableExists(thisName) == false) this->dataNames[thisName] = new InternalDataType( new std::string( thisData ), 0 );
+			else this->dataNames[thisName]->setData( new std::string( thisData ), 0 );
 			this->refresh();
 			this->garbageCollect();
 			return true;
 		} // push onto an array
 		else if (thisName != "") { // push a scalar on a vector
-			this->dataNames[thisName] = new InternalDataType( new std::string( thisData ), 0 );
+			if (this->variableExists(thisName) == false) this->dataNames[thisName] = new InternalDataType( new std::string( thisData ), 0 );
+			else this->dataNames[thisName]->setData( new std::string( thisData ), 0 );
 			this->arrayAutoIndex = -1; // taint array
 			this->garbageCollect();
 			return true;
