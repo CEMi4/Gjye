@@ -103,6 +103,7 @@ std::string runVectorStruct(EnviroWrap * environment, TokenGroup * tGroup, std::
 				else {
 					vectorStorage = vectorStorage->getVector(tokenDataTmp, false);
 					environment->dataStructure.getVector(tokenQualifier, false)->addVector(headerName, *vectorStorage);
+					if (tokenData.at(1) == '_') environment->dataStructure.removeVariable(tokenData.substr(1)); // clean up transients 
 				}
 				
 			}
@@ -219,7 +220,6 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		
 		if (tokID.length() <= 0) {std::cout << "ERROR: Empty token: " << tokArry[0] << "¬" << tokArry[1] <<std::endl;exit(1);} // the token has nothing in it!!
 		
-		
 		if (tokID.at(0) == '{' && tokID.at(tokID.length()-1) == '}') { // catch generic block declarations
 			std::string blockData = tokID.substr(1,tokID.length()-2); // look ma, no braces!
 			std::string returnValue = "";
@@ -281,11 +281,12 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			levelData = tokID.substr(oPar+1,cPar-oPar-1);
 		}
 		else {
+		
 			int tmp = 0;
 			while (  tmp+1 < tokID.length() && (tmp = tokID.find_first_of("&|",tmp+1)) != std::string::npos && tmp+1 < tokID.length() && tokID.at(tmp+1) != tokID.at(tmp) ) // get the && and || operators (after position 0) 
 				++tmp;
 			
-			if ( tmp+1 < tokID.length() && ( tokID.at(tmp) == '&' || tokID.at(tmp) == '|' ) && tokID.at(tmp+1) == tokID.at(tmp) ) { // we found a && or || 
+			if ( tmp != std::string::npos && tmp+1 < tokID.length() && ( tokID.at(tmp) == '&' || tokID.at(tmp) == '|' ) && tokID.at(tmp+1) == tokID.at(tmp) ) { // we found a && or || 
 				int oOp, eOp;
 				char oper = tokID.at( tmp );
 				if (tokID.at( tmp+1 ) == oper)
@@ -349,7 +350,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				ifReturnRaw = runTokenStruct(environment,tGroup,ifReturnExpr);
 				ifReturnValue = tools::prepareVectorData( &environment->dataStructure, ifReturnRaw, false ); // retrieve expression value
-				environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
+				if (ifReturnRaw.at(1) == '_') environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
 				if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: While expression (non-numeric)" <<std::endl;exit(1);}
 				
 				// HANDLE EXPR //
@@ -369,7 +370,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 					
 					ifReturnRaw = runTokenStruct(environment,tGroup,ifReturnExpr);
 					ifReturnValue = tools::prepareVectorData( &environment->dataStructure, ifReturnRaw, false ); // retrieve expression value
-					environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
+					if (ifReturnRaw.at(1) == '_') environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
 					
 					if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: While expression (non-numeric)" <<std::endl;exit(1);}
 					
@@ -655,7 +656,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				if (levelData.at(0) == '%') {
 					VariableStorage * tempVector;
 					tempVector = environment->dataStructure.vecStringToVector(&varData);
-					varData = tools::prepareVectorData(&environment->dataStructure, varData);
+					varData = tools::prepareVectorData(&environment->dataStructure, varData, false);
 					tVecTypes.push_back(tempVector->typeString(varData));
 				} else {
 					tVecTypes.push_back(environment->dataStructure.typeString(varData));
@@ -671,7 +672,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				if (postfixFuncData.at(0) == '%') {
 					VariableStorage * tempVector;
 					tempVector = environment->dataStructure.vecStringToVector(&varData);
-					varData = tools::prepareVectorData(&environment->dataStructure, varData);
+					varData = tools::prepareVectorData(&environment->dataStructure, varData, false);
 					std::string type = tempVector->typeString(varData);
 					if (type == "-1") type = "%"; // to fix isDefined
 					tVecTypes.push_back(type);

@@ -288,7 +288,7 @@
 						} else {
 							if (returnNullOnNonExistance && returnVector->variableExists(vecName->substr(1, nIndex-1)) == false) return NULL;
 							DataStorageStack * tmpDSS = new DataStorageStack(this); // just a temp wrapper 
-							returnVector = returnVector->getVector(tools::prepareVectorData(tmpDSS, vecName->substr(1, nIndex-1)), false); // jump!  
+							returnVector = returnVector->getVector(tools::prepareVectorData(tmpDSS, vecName->substr(1, nIndex-1), false), false); // jump!  
 							delete tmpDSS;
 							vecName->erase(0, nIndex+1);
 							nIndex = 0;

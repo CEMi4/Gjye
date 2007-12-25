@@ -93,7 +93,7 @@
 		VariableStorage * addVectorStorage = NULL;
 		std::string addData = addThisData.substr(1,addThisData.length()-1);
 		addVectorStorage = dataStructure->vecStringToVector(&addData); // jump to the vector object we want to check (modifies varData to make it the highest level) 
-		addData = tools::prepareVectorData(dataStructure, addData); // this is the highest level!  ie)  %topName[index][varData];  or  %varData; 
+		addData = tools::prepareVectorData(dataStructure, addData, false); // this is the highest level!  ie)  %topName[index][varData];  or  %varData; 
 		
 		if(addVectorStorage->type(addData) == 0) { // add a scalar to a vector 
 			if (vocab["before"] != "") {toVectorStorage->addVariable("", tools::prepareVectorData(dataStructure, addThisData), (int) tools::stringToInt(tools::prepareVectorData(dataStructure, vocab["before"])));} // inherent precedence 
@@ -102,7 +102,7 @@
 			else if (addType == "prefix") {toVectorStorage->addVariable("", tools::prepareVectorData(dataStructure, addThisData), 0);}
 			else if (addType == "postfix") {toVectorStorage->addVariable("", tools::prepareVectorData(dataStructure, addThisData));}
 		} else { // add a vector to a vector 
-			addVectorStorage = addVectorStorage->getVector(addData);
+			addVectorStorage = addVectorStorage->getVector(addData, false);
 			if (vocab["before"] != "") {toVectorStorage->addVector("", *addVectorStorage, (int) tools::stringToInt(tools::prepareVectorData(dataStructure, vocab["before"])));} // inherent precedence 
 			else if (vocab["after"] != "") {toVectorStorage->addVector("", *addVectorStorage, (int) tools::stringToInt(tools::prepareVectorData(dataStructure, vocab["after"]))+1);}
 			else if (vocab["at"] != "") {toVectorStorage->addVector("", *addVectorStorage, (int) tools::stringToInt(tools::prepareVectorData(dataStructure, vocab["at"])));}
@@ -206,11 +206,11 @@
 			VariableStorage * vectorStorage = NULL;
 			std::string toData = vocab["to"].substr(1,vocab["to"].length()-1);
 			vectorStorage = dataStructure->vecStringToVector(&toData); // jump to the vector object we want to check (modifies toData to make it the highest level) 
-			toData = tools::prepareVectorData(dataStructure, toData); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
+			toData = tools::prepareVectorData(dataStructure, toData, false); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
 			
 			if (vectorStorage->type(toData) == 0) {returnValue = this->addToStringVar();} // it's actually a scalar 
 			else { // it is indeed a vector 
-				vectorStorage = vectorStorage->getVector(toData);
+				vectorStorage = vectorStorage->getVector(toData, false);
 				returnValue = this->addToVector(vectorStorage);
 			}
 		} // vectors
@@ -323,14 +323,14 @@
 			std::string toData = vocab["left"].substr(1,vocab["left"].length()-1);
 			
 			vectorStorage = dataStructure->vecStringToVector(&toData); // jump to the vector object we want to check (modifies toData to make it the highest level) 
-			toData = tools::prepareVectorData(dataStructure, toData); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
+			toData = tools::prepareVectorData(dataStructure, toData, false); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
 			
 			int type = (vocab["beginsWith"] != ""?0:1);
 			if (vectorStorage->type(toData) == 0) { // it's actually a scalar 	
 				returnValue = this->beginsWithStringVar(type);
 			}
 			else { // it is indeed a vector 
-				vectorStorage = vectorStorage->getVector(toData);
+				vectorStorage = vectorStorage->getVector(toData, false);
 				returnValue = this->beginsWithVector(type, vectorStorage);
 			}
 		} // vectors
@@ -407,7 +407,7 @@
 			std::string toData = vocab["in"].substr(1,vocab["in"].length()-1);
 			
 			vectorStorage = dataStructure->vecStringToVector(&toData); // jump to the vector object we want to check (modifies toData to make it the highest level) 
-			toData = tools::prepareVectorData(dataStructure, toData); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
+			toData = tools::prepareVectorData(dataStructure, toData, false); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
 			
 			if (vectorStorage->type(toData) == 0) { // it's actually a scalar 	
 				returnValue = this->charAtInStringVar();
@@ -518,14 +518,14 @@
 			std::string toData = vocab["left"].substr(1,vocab["left"].length()-1);
 			
 			vectorStorage = dataStructure->vecStringToVector(&toData); // jump to the vector object we want to check (modifies toData to make it the highest level) 
-			toData = tools::prepareVectorData(dataStructure, toData); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
+			toData = tools::prepareVectorData(dataStructure, toData, false); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
 			
 			int type = (vocab["contains"] != ""?0:1);
 			if (vectorStorage->type(toData) == 0) { // it's actually a scalar 	
 				returnValue = this->containsStringVar(type);
 			}
 			else { // it is indeed a vector 
-				vectorStorage = vectorStorage->getVector(toData);
+				vectorStorage = vectorStorage->getVector(toData, false);
 				if (vectorStorage->type() >= 0) returnValue = this->containsVector(type, vectorStorage); // arrays only 
 				else return "";
 			}
@@ -618,7 +618,7 @@
 			std::string findData = tools::prepareVectorData(dataStructure, vocab["IndexOf"]);
 			std::map<std::string, InternalDataType *>::const_iterator iter;
 			for (iter = inNodes->begin(); iter != inNodes->end(); ++iter) {
-				if ((*inNodes)[iter->first]->getValue() == 0) { // we can only compare scalars/strings (don't convert -- ambiguous) 
+				if (inVector->type(iter->first) == 0) { // we can only compare scalars/strings (don't convert -- ambiguous) 
 					if (inVector->getData(iter->first) == findData) return iter->first;
 				}
 			}
@@ -627,7 +627,7 @@
 			std::string findData = tools::prepareVectorData(dataStructure, vocab["LastIndexOf"]);
 			std::map<std::string, InternalDataType *>::reverse_iterator iter;
 			for (iter = inNodes->rbegin(); iter != inNodes->rend(); ++iter) {
-				if ((*inNodes)[iter->first]->getValue() == 0) { // we can only compare scalars/strings (don't convert -- ambiguous) 
+				if (inVector->type(iter->first) == 0) { // we can only compare scalars/strings (don't convert -- ambiguous) 
 					if (inVector->getData(iter->first) == findData) return iter->first;
 				}
 			}
@@ -687,14 +687,14 @@
 			std::string toData = vocab["in"].substr(1,vocab["in"].length()-1);
 			
 			vectorStorage = dataStructure->vecStringToVector(&toData); // jump to the vector object we want to check (modifies toData to make it the highest level) 
-			toData = tools::prepareVectorData(dataStructure, toData); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
+			toData = tools::prepareVectorData(dataStructure, toData, false); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
 			
 			int type = (vocab["IndexOf"] != ""?0:1);
 			if (vectorStorage->type(toData) == 0) { // it's actually a scalar 	
 				returnValue = this->indexOfInStringVar(type);
 			}
 			else { // it is indeed a vector 
-				vectorStorage = vectorStorage->getVector(toData);
+				vectorStorage = vectorStorage->getVector(toData, false);
 				if (vectorStorage->type() >= 0) returnValue = this->indexOfInVector(type, vectorStorage); // arrays only (there is no first and last in a vector) 
 				else return "";
 			}
@@ -780,6 +780,8 @@
 			std::string thisData = vocab["left"].substr(1,vocab["left"].length()-1);
 			if (dataStructure->variableExists(thisData)) returnValue = "1";
 		} // var
+		
+		// needs clean-up (delete transients ...) 
 		
 		// turn return string into a variable 
 		std::string tokenQualifier = dataStructure->variableReferencer("_STRING_");
@@ -918,7 +920,9 @@
 		else if (vocab["Local"].at(0) == '%') { // create (localized) (VECTOR)
 			std::string vecName = vocab["Local"].substr(1,vocab["Local"].length()-1);
 			
-			dataStructure->addVector(vecName, *(new VariableStorage), -1, true);
+			VariableStorage * tmp = new VariableStorage;
+			dataStructure->addVector(vecName, *tmp, -1, true);
+			delete tmp;
 			tokenQualifier = "%" + vecName;
 		}
 		else {std::cout << "WARNING :: Assignation: Unknown Data Type!" <<std::endl;}
@@ -1118,7 +1122,19 @@
 		else if (vocab["LengthOf"] != "") {typeValue = vocab["LengthOf"];}
 		
 		if (typeValue.length() > 0 && typeValue.at(0) == '%') {
-			returnValue = tools::prepareVectorData(dataStructure, typeValue);
+			VariableStorage * vectorStorage = NULL;
+			std::string toData = typeValue.substr(1);
+			
+			vectorStorage = dataStructure->vecStringToVector(&toData); // jump to the vector object we want to check (modifies toData to make it the highest level) 
+			toData = tools::prepareVectorData(dataStructure, toData, false); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
+			
+			if (vectorStorage->type(toData) == 0) { // it's actually a scalar 	
+				returnValue = tools::intToString(tools::prepareVectorData(dataStructure, typeValue).length()); // same as below 
+			}
+			else { // it is indeed a vector 
+				returnValue = tools::prepareVectorData(dataStructure, typeValue);
+			}
+		
 		} // VECTOR
 		else if (typeValue != "") { // stringVar
 			returnValue = tools::intToString(tools::prepareVectorData(dataStructure, typeValue).length());
@@ -1191,7 +1207,7 @@
 	std::string Random_Obj::randomStringVar() {
 		std::ostringstream outs;
 		
-		if (vocab["Random"] == "" || tools::prepareVectorData(dataStructure, vocab["Random"]) == "") { // [0-1)
+		if (vocab["Random"] == "" || tools::prepareVectorData(dataStructure, vocab["Random"], false) == "") { // [0-1)
 			outs << "0.";
 			for (int i = 0; i < 12; ++i) {
 				outs << tools::randomNumber(0, 9);
@@ -1241,7 +1257,7 @@
 		if (vocab["Rand"] != "") {typeValue = vocab["Random"] = vocab["Rand"];}
 		else if (vocab["Random"] != "") {typeValue = vocab["Random"];}
 		
-		if (typeValue.length() > 0 && typeValue.at(0) == '%') {} // VECTOR
+		if (typeValue.length() > 0 && typeValue.at(0) == '%' && typeValue.find('[') == std::string::npos) {} // VECTOR -- weak check b/c vectors are not allowed anyhow ... 
 		else {returnValue = this->randomStringVar();} // stringVar/NULL
 				
 		// turn return string into a variable 
@@ -1330,7 +1346,18 @@
 		if (vocab["Delete"] != "") {vocab["Remove"] = vocab["Delete"];}
 
 		if (vocab["Remove"].length() > 0 && vocab["Remove"].at(0) == '%' && vocab["from"] == "") { // delete a vector 
-			returnValue = this->deleteVec();
+			VariableStorage * vectorStorage = NULL;
+			std::string toData = vocab["Delete"].substr(1);
+			
+			vectorStorage = dataStructure->vecStringToVector(&toData); // jump to the vector object we want to check (modifies toData to make it the highest level) 
+			toData = tools::prepareVectorData(dataStructure, toData, false); // this is the highest level!  ie)  %topName[index][toData];  or  %toData; 
+			
+			if (vectorStorage->type(toData) == 0) { // it's actually a scalar 	
+				returnValue = this->deleteVar();
+			}
+			else {
+				returnValue = this->deleteVec();
+			}
 		}
 		else if (vocab["Remove"] != "" && vocab["from"] == "") { // delete a variable 
 			returnValue = this->deleteVar();
@@ -1426,7 +1453,7 @@
 		double doubleRoundData = tools::stringToInt(roundData);
 		if (roundData.find(".") == std::string::npos) {return roundData;} // integers can't be rounded further 
 		
-		if (vocab["to"] != "" && tools::isNumber(tools::prepareVectorData(dataStructure, vocab["to"]))) {
+		if ( vocab["to"] != "" && tools::isNumber(tools::prepareVectorData(dataStructure, vocab["to"], false)) ) {
 			preciseData = (int) tools::stringToInt(tools::prepareVectorData(dataStructure, vocab["to"]));
 		} else {preciseData = 0;}
 		if (preciseData == 0) {preciseData=-1;} // behind the decimal, not on it

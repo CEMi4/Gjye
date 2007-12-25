@@ -50,7 +50,7 @@
 	}
 	
 	std::string Addition_Obj::executeCode() {
-		std::string returnValue = "", tokenQualifier = "";
+		std::string returnValue = "", tokenQualifier = "", varDataL = "", varDataR = "";
 		bool scalarL = false, scalarR = false;
 		VariableStorage * rightVector = NULL, * leftVector = NULL;
 		
@@ -58,19 +58,19 @@
 			std::cout << "WARNING :: Addition: Malformed Right Operand (len)!" <<std::endl; // the (right) operand isn't there ... 
 		else {
 			if (vocab["left"].at(0) == '%') {
-				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
+				varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
 				leftVector = dataStructure->vecStringToVector(&varDataL);
-				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL, false);
 				if (leftVector->type(varDataL) == 0) {scalarL = true;}
-				leftVector = leftVector->getVector(varDataL); // jump in prep for VECTOR combination (though we may not need it) 
+				else leftVector = leftVector->getVector(varDataL, false); // jump in prep for VECTOR combination (though we may not need it) 
 			}
 			
 			if (vocab["right"].at(0) == '%') {
-				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
+				varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
 				rightVector = dataStructure->vecStringToVector(&varDataR);
-				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR, false);
 				if (rightVector->type(varDataR) == 0) {scalarR = true;}
-				rightVector = rightVector->getVector(varDataR); // jump in prep for VECTOR combination (though we may not need it) 
+				else rightVector = rightVector->getVector(varDataR, false); // jump in prep for VECTOR combination (though we may not need it) 
 			}
 			
 			if (vocab["left"].at(0) == '$' || vocab["right"].at(0) == '$' || scalarL || scalarR) { // addition/concatenation (SCALAR)
@@ -96,7 +96,9 @@
 			}
 			else if (!(scalarL || scalarR)) { // combination (VECTOR) 
 				tokenQualifier = dataStructure->variableReferencer("_VECTOR_");
-				dataStructure->addVector(tokenQualifier, *(new VariableStorage), -1, true); // create an empty set 
+				VariableStorage * tmp = new VariableStorage;
+				dataStructure->addVector(tokenQualifier, *tmp, -1, true); // create an empty set 
+				delete tmp;
 				
 				std::map<std::string, InternalDataType *, strCmp> * leftNodes = leftVector->getVectorNodes();
 				std::map<std::string, InternalDataType *, strCmp> * rightNodes = rightVector->getVectorNodes();
@@ -105,21 +107,24 @@
 				std::string addName = "";
 				for (iter = leftNodes->begin(); iter != leftNodes->end(); ++iter) {
 					if (leftVector->type() >= 0) addName = ""; else addName = iter->first;
-					if ( ((*leftNodes)[iter->first]->getType() & 3) != 0) dataStructure->getVector(tokenQualifier)->addVector( addName   , *leftVector->getVector(iter->first)    ); // it's a vector type 
-					else dataStructure->getVector(tokenQualifier)->addVariable(addName, leftVector->getData(iter->first));
+					if ( ((*leftNodes)[iter->first]->getType() & 3) != 0) dataStructure->getVector(tokenQualifier, false)->addVector( addName   , *leftVector->getVector(iter->first)    ); // it's a vector type 
+					else dataStructure->getVector(tokenQualifier, false)->addVariable(addName, leftVector->getData(iter->first));
 				}
 				
 				for (iter = rightNodes->begin(); iter != rightNodes->end(); ++iter) {
 					if (rightVector->type() >= 0) addName = ""; else addName = iter->first;
-					if ( ((*rightNodes)[iter->first]->getType() & 3) != 0) dataStructure->getVector(tokenQualifier)->addVector(    addName, *rightVector->getVector(iter->first)    ); // it's a vector type 
-					else dataStructure->getVector(tokenQualifier)->addVariable(addName, rightVector->getData(iter->first));
+					if ( ((*rightNodes)[iter->first]->getType() & 3) != 0) dataStructure->getVector(tokenQualifier, false)->addVector(    addName, *rightVector->getVector(iter->first)    ); // it's a vector type 
+					else dataStructure->getVector(tokenQualifier, false)->addVariable(addName, rightVector->getData(iter->first));
 				}
+				
+				if (varDataL.at(0) == '_') dataStructure->removeVariable(varDataL); // clean up transients 
+				if (varDataR.at(0) == '_') dataStructure->removeVariable(varDataR);
 				
 				tokenQualifier.insert(0,"%");
 			}
 			else {std::cout << "WARNING :: Addition: Unknown Data Type!" <<std::endl;}
 		}
-
+		
 		return tokenQualifier;
 	}
 /// ### ///
@@ -186,7 +191,7 @@
 				
 				VariableStorage * leftVector = NULL;
 				leftVector = dataStructure->vecStringToVector(&vecNameCopy, false); // jump to the vector object we want to modify (modifies vecNameCopy to make it the highest level) 
-				vecNameCopy = tools::prepareVectorData(dataStructure, vecNameCopy); // this is the highest level!  ie)  %topName[index][vecNameCopy];  or  %vecNameCopy; 
+				vecNameCopy = tools::prepareVectorData(dataStructure, vecNameCopy, false); // this is the highest level!  ie)  %topName[index][vecNameCopy];  or  %vecNameCopy; 
 				
 				vecData = vocab["right"].substr(1,vocab["right"].length()-1);
 				
@@ -276,14 +281,14 @@
 			if (vocab["left"].at(0) == '%') {
 				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-(skipAmt+1));
 				VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
-				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL, false);
 				if (leftVector->type(varDataL) == 0) {scalarL = true;}
 			}
 			
 			if (vocab["right"].at(0) == '%') {
 				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
 				VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR, false);
 				if (rightVector->type(varDataR) == 0) {scalarR = true;}
 			}
 			
@@ -373,14 +378,14 @@
 			if (vocab["left"].at(0) == '%') {
 				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
 				VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
-				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL, false);
 				if (leftVector->type(varDataL) == 0) {scalarL = true;}
 			}
 			
 			if (vocab["right"].at(0) == '%') {
 				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
 				VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR, false);
 				if (rightVector->type(varDataR) == 0) {scalarR = true;}
 			}
 			
@@ -456,14 +461,14 @@
 			if (vocab["left"].at(0) == '%') {
 				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
 				VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
-				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL, false);
 				if (leftVector->type(varDataL) == 0) {scalarL = true;}
 			}
 			
 			if (vocab["right"].at(0) == '%') {
 				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
 				VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR, false);
 				if (rightVector->type(varDataR) == 0) {scalarR = true;}
 			}
 			
@@ -539,14 +544,14 @@
 			if (vocab["left"].at(0) == '%') {
 				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
 				VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
-				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL, false);
 				if (leftVector->type(varDataL) == 0) {scalarL = true;}
 			}
 			
 			if (vocab["right"].at(0) == '%') {
 				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
 				VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR, false);
 				if (rightVector->type(varDataR) == 0) {scalarR = true;}
 			}
 			
@@ -622,14 +627,14 @@
 			if (vocab["left"].at(0) == '%') {
 				std::string varDataL = vocab["left"].substr(1,vocab["left"].length()-2);
 				VariableStorage * leftVector = dataStructure->vecStringToVector(&varDataL);
-				varDataL = tools::prepareVectorData(dataStructure, varDataL);
+				varDataL = tools::prepareVectorData(dataStructure, varDataL, false);
 				if (leftVector->type(varDataL) == 0) {scalarL = true;}
 			}
 			
 			if (vocab["right"].at(0) == '%') {
 				std::string varDataR = vocab["right"].substr(1,vocab["right"].length()-1);
 				VariableStorage * rightVector = dataStructure->vecStringToVector(&varDataR);
-				varDataR = tools::prepareVectorData(dataStructure, varDataR);
+				varDataR = tools::prepareVectorData(dataStructure, varDataR, false);
 				if (rightVector->type(varDataR) == 0) {scalarR = true;}
 			}
 			
@@ -741,7 +746,7 @@
 			if (vocab["right"].at(0) == '%') {
 				vecNameCpy = vocab["right"].substr(1,vocab["right"].length()-1);
 				rightVector = dataStructure->vecStringToVector(&vecNameCpy);
-				vecNameCpy = tools::prepareVectorData(dataStructure, vecNameCpy);
+				vecNameCpy = tools::prepareVectorData(dataStructure, vecNameCpy, false);
 				if (rightVector->type(vecNameCpy) == 0) {scalarR = true;}
 			}
 			
