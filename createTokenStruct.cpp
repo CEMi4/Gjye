@@ -497,6 +497,7 @@ void createTokenStruct(std::string input, TokenGroup * tGroup) { // one line at 
 			int lOccur = lBrac; // the beginning of our block
 			if (lOccur > 0 && isalnum(input.at(lOccur-1))) { 
 				lOccur = input.find_last_not_of(validKeyChars,lOccur-1); // find the REAL beginning >%vec[1][2][3] 
+				if (lOccur == std::string::npos || input.at(lOccur) != '%') lOccur = lBrac; // no (real) beginning was found ... fall back!  (this makes Print [1,2,3] work correctly) 
 				//std::cout << input << " : " << lOccur <<std::endl;
 			}
 			
@@ -514,7 +515,7 @@ void createTokenStruct(std::string input, TokenGroup * tGroup) { // one line at 
 			mIndex = lBrac;
 			if (lOccur > 0 && input.rfind("[",lOccur-1) != std::string::npos) {lOccur = input.rfind("[",lOccur-1)+1;}
 			else if (lOccur > 0 && input.rfind("(",lOccur-1) != std::string::npos) {lOccur = input.rfind("(",lOccur-1)+1;}
-			else {lOccur=1;}
+			else {lOccur=1;} // is this actually an error?  
 			lBrac = lOccur-1;
 		}
 		else if (input.at(mIndex) == ')') {std::cout << "CRITERROR :: Malformation: Parenthesis not open!" <<std::endl;exit(1);} /* ERROR HANDLE */ 

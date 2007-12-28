@@ -5,7 +5,7 @@ extern bool SHOW_DEBUGGING;
 
 #include <map>
 #include <vector>
-
+#include "trie.h"
 
 //################ PROTOTYPES ################//
 struct strCmp {
@@ -52,6 +52,7 @@ public:
 class VariableStorage {
 protected: 
 	std::map<std::string, InternalDataType *, strCmp> dataNames; // must be a pointer for mult. references 
+	gstl::trie<int> test;
 	
 	int startVariableReference; // 1000000000 -- hopefully find a better way than this later 
 	int arrayAutoIndex;
@@ -72,12 +73,12 @@ public:
 	bool addVector(std::string, const VariableStorage &, int = -1);
 	bool addVariable(std::string = "", std::string = "", int = -1);
 	
-	bool removeVariable(std::string);
+	bool removeVariable(const std::string &);
 	
-	VariableStorage * getVector(std::string, bool = true);
+	VariableStorage * getVector(const std::string &, bool = true);
 	VariableStorage * vecStringToVector(std::string *, bool = true, bool = false);
 	
-	std::string getData(std::string, bool = true);
+	std::string getData(const std::string &, bool = true);
 	std::map<std::string, InternalDataType *, strCmp> * getVectorNodes();
 	std::string dumpData() const;
 	

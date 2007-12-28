@@ -121,10 +121,10 @@
 		if (this->dataNames.size() > 0) {
 			std::map<std::string, InternalDataType *>::reverse_iterator iter = this->dataNames.rbegin();
 			for (; iter != this->dataNames.rend(); ++iter) {
-				if ( this->dataNames[iter->first]->getRefs() == 0 ) {
+				if ( iter->second->getRefs() == 0 ) {
 					//std::cout << "DESTROYED: " << iter->first << "::" << this->dataNames[iter->first]->getValue() <<std::endl;
-					delete this->dataNames[iter->first];
-					this->dataNames[iter->first] = NULL;
+					delete iter->second;
+					iter->second = NULL;
 					this->dataNames.erase(iter->first);
 				}
 			}
@@ -134,7 +134,13 @@
 	
 	
 	/* public */ 
-	VariableStorage::VariableStorage(int aaIdx) {this->startVariableReference = 0;this->arrayAutoIndex = aaIdx;}
+	VariableStorage::VariableStorage(int aaIdx) {
+		int tobj = 33;
+		this->test.insert( "test", tobj );
+		std::cout << "RET: " << this->test.find( "test" ) << std::endl;
+		this->startVariableReference = 0;
+		this->arrayAutoIndex = aaIdx;
+	}
 	VariableStorage::VariableStorage(const VariableStorage * vSto) { // clone (deep) 
 		std::map<std::string, InternalDataType *>::const_iterator iter;
 		for (iter = vSto->dataNames.begin(); iter != vSto->dataNames.end(); ++iter) {
@@ -148,12 +154,12 @@
 	VariableStorage::~VariableStorage() {
 		std::map<std::string, InternalDataType *>::iterator iter;
 		for (iter = this->dataNames.begin(); iter != this->dataNames.end(); ++iter) {
-			if (this->dataNames[iter->first] == NULL) continue;
-			this->dataNames[iter->first]->downRef(); // i'm no longer interested 
-			if ( iter->first.at(0) == '_' || this->dataNames[iter->first]->getRefs() == 0) {
+			if (iter->second == NULL) continue;
+			iter->second->downRef(); // i'm no longer interested 
+			if ( iter->first.at(0) == '_' || iter->second->getRefs() == 0) {
 				//std::cout << "DESTROYED: " << iter->first << "::" << this->dataNames[iter->first]->getValue() <<std::endl;
-				delete this->dataNames[iter->first];
-				this->dataNames[iter->first] = NULL;
+				delete iter->second;
+				iter->second = NULL;
 			}
 		}
 	}
@@ -204,6 +210,13 @@
 	
 	
 	bool VariableStorage::addVariable(std::string thisName, std::string thisData, int insPos) { // use getVector first to jump to the level! 
+		int tobj = 444;
+		this->test.insert( "tester", tobj );
+		std::cout << "RET: " << this->test.find( "tester" ) << std::endl;
+		++tobj;
+		this->test.insert( "tes", tobj );
+		std::cout << "RET: " << this->test.find( "tes" ) << std::endl;
+		
 		if (this->arrayAutoIndex >= 0 && (thisName == "" || tools::isInteger(thisName))) { // arrays 
 			if (thisName == "" && insPos < 0) {
 				thisName = tools::intToString(this->arrayAutoIndex);
@@ -236,7 +249,7 @@
 	}
 	
 	
-	bool VariableStorage::removeVariable(std::string thisName) { // use getVector first to jump to the level! 
+	bool VariableStorage::removeVariable(const std::string & thisName) { // use getVector first to jump to the level! 
 		if (this->variableExists(thisName) == false) {
 			std::cout << "WARNING :: DNE: removeVariable("  << thisName << ")!" <<std::endl;
 			return false;
@@ -254,7 +267,7 @@
 	}
 	
 	
-	VariableStorage * VariableStorage::getVector(std::string thisName, bool purgeTransient) { // give me an object if i give you a base 
+	VariableStorage * VariableStorage::getVector(const std::string & thisName, bool purgeTransient) { // give me an object if i give you a base 
 		if (this->variableExists(thisName) == false) {std::cout << "ERROR :: DNE: getVector("  << thisName << ")!" <<std::endl;exit(1);} // otherwise die 
 		
 		if ( (this->dataNames.find(thisName)->second->getType() & 3) != 0) {
@@ -310,7 +323,7 @@
 	}
 	
 	
-	std::string VariableStorage::getData(std::string thisName, bool purgeTransient) { // use getVector first to jump to the level! 
+	std::string VariableStorage::getData(const std::string & thisName, bool purgeTransient) { // use getVector first to jump to the level! 
 		if (this->variableExists(thisName) == true) {
 			if (this->dataNames.find(thisName)->second->getType() == 0) {
 				std::string temp = *((std::string *) this->dataNames.find(thisName)->second->getValue());

@@ -30,6 +30,7 @@ bool SHOW_DEBUGGING = false; // default no
 int main(int argc, char * argv[]) {
 	srand((unsigned) time(0)); // for random generation
 	
+	
 	// BUILD THE STANDARD LIBRARY //
 	EnviroWrap * eStack = new EnviroWrap();
 	FuncObj * tempObj = NULL;
