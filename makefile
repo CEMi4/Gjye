@@ -7,7 +7,7 @@ OBJS = objs/trie.o objs/blockWrappers.o objs/createTokenStruct.o objs/execTokenS
 	objs/operMethods.o objs/tokenGroups.o objs/varStorage.o objs/methodStorage.o objs/enviroWrap.o 
 CXX = g++
 CDEBUG = -g
-CXXFLAGS = -O2 $(CDEBUG) -Wall -Wno-sign-compare -pedantic-errors
+CXXFLAGS = -O2 $(CDEBUG) -Wall -pedantic
 
 # windres test #
 WRTEST = $(shell windres -h)

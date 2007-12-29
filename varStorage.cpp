@@ -88,7 +88,7 @@
 	
 	int InternalDataType::getRefs() const {return this->references;}
 	
-	int InternalDataType::getType() const {return this->validType;}
+	uint32_t InternalDataType::getType() const {return this->validType;}
 	
 	void * InternalDataType::getValue() const {return this->dataValue;}
 	
@@ -135,10 +135,10 @@
 	
 	/* public */ 
 	VariableStorage::VariableStorage(int aaIdx) {
-		int tobj = 33;
+		/*int tobj = 33;
 		this->test.insert( "test", tobj );
 		std::cout << "RET: " << this->test.find( "test" ) << std::endl;
-		this->startVariableReference = 0;
+		*/this->startVariableReference = 0;
 		this->arrayAutoIndex = aaIdx;
 	}
 	VariableStorage::VariableStorage(const VariableStorage * vSto) { // clone (deep) 
@@ -210,13 +210,13 @@
 	
 	
 	bool VariableStorage::addVariable(std::string thisName, std::string thisData, int insPos) { // use getVector first to jump to the level! 
-		int tobj = 444;
+		/*int tobj = 444;
 		this->test.insert( "tester", tobj );
 		std::cout << "RET: " << this->test.find( "tester" ) << std::endl;
 		++tobj;
 		this->test.insert( "tes", tobj );
 		std::cout << "RET: " << this->test.find( "tes" ) << std::endl;
-		
+		*/
 		if (this->arrayAutoIndex >= 0 && (thisName == "" || tools::isInteger(thisName))) { // arrays 
 			if (thisName == "" && insPos < 0) {
 				thisName = tools::intToString(this->arrayAutoIndex);
@@ -285,7 +285,7 @@
 		VariableStorage * returnVector = this;
 		if (*vecName == "") return returnVector;
 		
-		int lIndex = vecName->find_first_not_of(validKeyChars);
+		unsigned int lIndex = vecName->find_first_not_of(validKeyChars);
 		if (lIndex == std::string::npos) {lIndex = vecName->length()-1;}
 		
 		if (vecName->at(lIndex) == '[') { // it's not a simple vector (%vecName) 
@@ -293,7 +293,7 @@
 			returnVector = returnVector->getVector(vecName->substr(0, lIndex), false); // jump! 
 			vecName->erase(0, lIndex);
 			
-			int oBrac = 0, nIndex = 0; // number brackets open, current index 
+			unsigned int oBrac = 0, nIndex = 0; // number brackets open, current index 
 			while (nIndex < vecName->length() && (oBrac > 0 || vecName->at(nIndex) == '[')) {
 				if (vecName->at(nIndex) == '[') {++oBrac;++nIndex;}
 				else if (vecName->at(nIndex) == ']') {
@@ -491,7 +491,7 @@
 	VariableStorage * DataStorageStack::vecStringToVector(std::string * thisName, bool checkBaseExistence, bool returnNullOnNonExistance) {
 		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
 		
-		int lIndex = thisName->find_first_not_of(validKeyChars);
+		unsigned int lIndex = thisName->find_first_not_of(validKeyChars); // find the base existence, not higher! %vec<  not %vec[1][2] 
 		if (lIndex == std::string::npos) {lIndex = thisName->length()-1;}
 		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 

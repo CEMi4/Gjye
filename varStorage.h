@@ -5,6 +5,7 @@ extern bool SHOW_DEBUGGING;
 
 #include <map>
 #include <vector>
+#include <stdint.h>
 #include "trie.h"
 
 //################ PROTOTYPES ################//
@@ -18,7 +19,7 @@ class InternalDataType {
 protected: 
 	void * dataValue; // a void pointer to whatever it is ... 
 	
-	int validType; // which type is currently valid (best effort) 
+	uint32_t validType; // which type is currently valid (best effort) 
 	/* 
 	* value's representation as a string -- 0
 	* 1 and 2 are arrays and vectors, respectively 
@@ -43,7 +44,7 @@ public:
 	void nullRef();
 	
 	int getRefs() const;
-	int getType() const;
+	uint32_t getType() const;
 	void * getValue() const;
 };
 
@@ -52,7 +53,7 @@ public:
 class VariableStorage {
 protected: 
 	std::map<std::string, InternalDataType *, strCmp> dataNames; // must be a pointer for mult. references 
-	gstl::trie<int> test;
+	//gstl::trie<int> test;
 	
 	int startVariableReference; // 1000000000 -- hopefully find a better way than this later 
 	int arrayAutoIndex;

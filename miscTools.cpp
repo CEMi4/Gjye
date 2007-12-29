@@ -91,7 +91,7 @@ std::string prepareVectorData(DataStorageStack * dataStructure, std::string this
 	}
 	
 	if (isDQ == true) { // no quotes implies double quotes ... eg. select($a)  -->  select("$a")
-		int lIndex = 0, mIndex = thisData.find_first_of("$%");
+		unsigned int lIndex = 0, mIndex = thisData.find_first_of("$%");
 		std::string varData;
 		
 		while (mIndex != std::string::npos) { // replace variables with values
@@ -104,10 +104,15 @@ std::string prepareVectorData(DataStorageStack * dataStructure, std::string this
 				if (lIndex == std::string::npos) {lIndex = thisData.length()-1;} else {--lIndex;}
 				
 				if (lIndex+1 < thisData.length() && thisData.at(lIndex+1) == '[') { // find the end of the vector reference if it's not a simple vector ... %vec[%vec[x]][y]< 
-					int oBrac = 0, nIndex = lIndex+1; // number brackets open, current index 
+					int oBrac = 0; unsigned int nIndex = lIndex+1; // number brackets open, current index 
 					while (nIndex < thisData.length() && (oBrac > 0 || thisData.at(nIndex) == '[')) {
 						if (thisData.at(nIndex) == '[') {++oBrac;}
-						else if (thisData.at(nIndex) == ']') {--oBrac;}
+						else if (oBrac > 1 && thisData.at(nIndex) == ']') {--oBrac;}
+						else if (thisData.at(nIndex) == ']') {
+							std::cout << "WARNING :: Malformation: Mismatched vector brackets in string!" <<std::endl;
+							nIndex = lIndex+1;
+							break;
+						}
 						++nIndex;
 					}
 					lIndex = nIndex;
@@ -157,7 +162,7 @@ std::string cleanEscapes(std::string thisData) { // replace escape identifiers w
 
 
 std::string taintEscapes(std::string input) { // replace backslash with escape identifiers
-	for (int mIndex = 0; mIndex < input.length(); ++mIndex) { // swap out escapes with identifiers -- corresponds with cleanEscapes(string)
+	for (unsigned int mIndex = 0; mIndex < input.length(); ++mIndex) { // swap out escapes with identifiers -- corresponds with cleanEscapes(string)
 		if (input.at(mIndex) == '\\') {
 			switch (input.at(mIndex+1)) {
 				case '\\': input.replace(mIndex,2,"«{±BKSLH}»");break;

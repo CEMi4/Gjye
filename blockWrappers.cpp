@@ -59,7 +59,7 @@
 		std::string fullUserInput = this->codeInput, 
 			singleInput = "", returnValue="";
 		
-		int eIndex;
+		unsigned int eIndex;
 		while (fullUserInput != "") { // exec each command given 
 			eIndex = std::string::npos;
 			do {
@@ -67,7 +67,7 @@
 			} while (eIndex != std::string::npos && eIndex+1 < fullUserInput.length() && isdigit(fullUserInput.at(eIndex+1)) > 0 && fullUserInput.at(eIndex+1) != '«');
 			if (eIndex == std::string::npos) {eIndex = fullUserInput.length()-1;}
 			
-			int firstChar = 0;
+			unsigned int firstChar = 0;
 			while ( firstChar < fullUserInput.length() && fullUserInput.at(firstChar) == ' ')
 				++firstChar;
 			

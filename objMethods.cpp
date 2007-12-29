@@ -359,12 +359,12 @@
 	std::string CharAt_Obj::charAtInStringVar() {
 		std::string inData = tools::prepareVectorData(dataStructure, vocab["in"]), returnString = "";
 		int charAtData = (int) tools::stringToInt(tools::prepareVectorData(dataStructure, vocab["CharAt"]));
-		if (charAtData >= inData.length() || charAtData < 0) {return "";} // out of bounds
+		if (charAtData < 0 || (unsigned int) charAtData >= inData.length()) {return "";} // out of bounds
 		
 		returnString = inData.at(charAtData);
 		return returnString;
 	}
-		
+	
 	
 	/* public */ 
 	CharAt_Obj::CharAt_Obj(DataStorageStack * storage) : FuncObj(storage) {
@@ -606,7 +606,7 @@
 			returnInt = varData.rfind(findData);
 		}
 		
-		if (returnInt == std::string::npos) {returnInt = -1;}
+		if ((unsigned int) returnInt == std::string::npos) {returnInt = -1;}
 		
 		return tools::intToString(returnInt);
 	}
@@ -944,7 +944,7 @@
 		if (vocab["Lc"] != "") {luCaseData = tools::prepareVectorData(dataStructure, vocab["Lc"]);}
 		else if (vocab["Uc"] != "") {luCaseData = tools::prepareVectorData(dataStructure, vocab["Uc"]);}
 		
-		for(int i=0; i < luCaseData.length(); ++i) {
+		for(unsigned int i=0; i < luCaseData.length(); ++i) {
 			if (vocab["Lc"] != "") {luCaseData[i] = tolower(luCaseData[i]);}
 			else {luCaseData[i] = toupper(luCaseData[i]);}
 		}
@@ -1451,12 +1451,12 @@
 		int preciseData;
 		std::string returnValue = "", roundData = tools::prepareVectorData(dataStructure, vocab["Round"]);
 		double doubleRoundData = tools::stringToInt(roundData);
-		if (roundData.find(".") == std::string::npos) {return roundData;} // integers can't be rounded further 
+		if (roundData.length() <= 1 || roundData.find(".") == std::string::npos) {return roundData;} // integers can't be rounded further 
 		
 		if ( vocab["to"] != "" && tools::isNumber(tools::prepareVectorData(dataStructure, vocab["to"], false)) ) {
 			preciseData = (int) tools::stringToInt(tools::prepareVectorData(dataStructure, vocab["to"]));
 		} else {preciseData = 0;}
-		if (preciseData == 0) {preciseData=-1;} // behind the decimal, not on it
+		if (preciseData <= 0) {preciseData=-1;} // behind the decimal, not on it
 		
 		
 		if (roundData.find(".") == 0) { // numbers must have preceding number before decimal (0.0 NOT .0) 
@@ -1466,10 +1466,11 @@
 		
 		int roundedLoc, nextDigitLoc, decLoc = roundData.find(".");
 		
-		roundedLoc = (decLoc+preciseData < roundData.length()?decLoc+preciseData:0-1); // the digit location to be rounded (up) 
+		// we're going to have a big issue with large inputs! (signed int) cast 
+		roundedLoc = (decLoc+preciseData < (signed int) roundData.length() ? decLoc+preciseData : -1); // the digit location to be rounded (up) 
 		
-		if (preciseData == -1) {nextDigitLoc = (roundedLoc+2 < roundData.length()?roundedLoc+2:0-1);} // the following digit (after the one we want rounded) taking the . into account 
-		else {nextDigitLoc = (roundedLoc+1 < roundData.length()?roundedLoc+1:0-1);}
+		if (preciseData == -1) {nextDigitLoc = (roundedLoc+2 < (signed int) roundData.length() ? roundedLoc+2 : -1);} // the following digit (after the one we want rounded) taking the . into account 
+		else {nextDigitLoc = (roundedLoc+1 < (signed int) roundData.length() ? roundedLoc+1 : -1);}
 		
 		bool roundUp = false;
 		if (roundedLoc != -1 && nextDigitLoc != -1) {
@@ -1477,7 +1478,7 @@
 			else if ((((int) roundData.at(nextDigitLoc))-48) == 5) {
 				
 				bool overFive = false;
-				for (int i = nextDigitLoc+1; i < roundData.length(); ++i) { // 4.501 is actually 5
+				for (unsigned int i = nextDigitLoc+1; i < roundData.length(); ++i) { // 4.501 is actually 5
 					if ((((int) roundData.at(i))-48) > 0) {overFive = true;break;}
 				}
 				
@@ -1566,13 +1567,13 @@
 			int start = (int) tools::stringToInt(  tools::prepareVectorData(dataStructure, vocab["Select"].substr(0,  vocab["Select"].find(',')  ))  );
 				if (start < 0) start += varData.length(); // from the end (-1 is the last char) 
 			int length = (int) tools::stringToInt(  tools::prepareVectorData(dataStructure, vocab["Select"].substr(vocab["Select"].find(',')+1,vocab["Select"].length()-1))  );
-			if (start+length <= varData.length()) {returnValue = varData.substr(start,length);} // don't overflow the string! 
+			if ((unsigned int)(start+length) <= varData.length()) {returnValue = varData.substr(start,length);} // don't overflow the string! 
 			if (SHOW_DEBUGGING) std::cout << "     start: " << start << " length: " << length << " return: " << returnValue <<std::endl;
 		}
 		else { // integer (charat)
 			int start = (int) tools::stringToInt(tools::prepareVectorData(dataStructure, vocab["Select"]));
 			if (start < 0) start += varData.length(); // from the end (-1 is the last char) 
-			if (start < varData.length()) {returnValue = varData.substr(start,1);} // don't overflow the string! 
+			if ((unsigned int) start < varData.length()) {returnValue = varData.substr(start,1);} // don't overflow the string! 
 			if (SHOW_DEBUGGING) std::cout << "     start: " << start << " return: " << returnValue <<std::endl;
 		}
 		

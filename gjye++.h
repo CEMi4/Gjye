@@ -2,7 +2,7 @@
 #define GJYE_H
 
 //################ GLOBAL CONSTANTS ################//
-const int numTokens = 128; // store up to 128(*128) tokens
+const unsigned int numTokens = 128; // store up to 128(*128) tokens
 const std::string validTokenChars = "0123456789«»¬ "; // valids for tokens 
 const std::string tokenizers = "$(){}+-*/!=%#[], ><&|"; // used to find stops and starts 
 const std::string tokenizerStarts = "(+-*/!=%[,><&|"; // used to find starts 

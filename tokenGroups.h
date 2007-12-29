@@ -8,7 +8,7 @@
 class TokenLevel { // stores tokens horizontally
 public:
 	std::vector<std::string> data; // store (up to numTokens) tokens on each level 
-	int tokCount;
+	unsigned int tokCount;
 	bool sealed;
 	
 	TokenLevel();
@@ -19,7 +19,7 @@ public:
 class TokenGroup { // stores vertical tokens (exploded)
 private: 
 	std::vector<TokenLevel> token;
-	int currLevel;
+	unsigned int currLevel;
 	
 public:
 	std::string catalyst;

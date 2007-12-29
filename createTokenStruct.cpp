@@ -16,7 +16,7 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 	
 	*input = tools::taintEscapes(*input); // replace escape sequences
 	
-	for (int mIndex = input->find_first_of("'\""); mIndex != std::string::npos && oQuot >= 0 && oDQuot>= 0 && mIndex < input->length(); ++mIndex) { // strip out all strings, replacing as tokens 
+	for (unsigned int mIndex = input->find_first_of("'\""); mIndex != std::string::npos && oQuot >= 0 && oDQuot>= 0 && mIndex < input->length(); ++mIndex) { // strip out all strings, replacing as tokens 
 		
 		if (input->at(mIndex) == '"' && oQuot < 1) { // doubleqt block (begin - end)
 			if (oDQuot == 0) {
@@ -72,10 +72,10 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 	}
 	//// 
 	
-	for (int mIndex = 0; mIndex < input->length(); ++mIndex) { // strip out all numbers, replacing as vars 
+	for (unsigned int mIndex = 0; mIndex < input->length(); ++mIndex) { // strip out all numbers, replacing as vars 
 		if (isdigit(input->at(mIndex)) > 0) { // numbers (to vars) -- leap forward  ---  || input->at(mIndex) == '.' removed bc we MUST have #.# and not .# 
 			std::string strData = "", tokID = "";
-			int numberEnd;
+			unsigned int numberEnd;
 			
 			if (input->find_last_of(tokenizerStarts+" .",mIndex) != mIndex-1) continue; // it should be tokenized IMMEDIATELY before the number -- >$<_STRING_>000000 (so we don't swallow variables, tokens, etc) 
 			
@@ -129,16 +129,16 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 
 //################ TOKENIZE BLOCKS ################//
 void blockHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenizes block declarations, OKAY to call before prepareTokenInput 
-	int nBlo = 0, lBlo = 0; // open block; index block
-	int oQuot = 0, oDQuot = 0; // open quote
+	unsigned int nBlo = 0, lBlo = 0; // open block; index block
+	unsigned int oQuot = 0, oDQuot = 0; // open quote
 	
-	for (int mIndex = fullToken->find_first_of("{}'\""); mIndex != std::string::npos && mIndex < fullToken->length(); ++mIndex) {
+	for (unsigned int mIndex = fullToken->find_first_of("{}'\""); mIndex != std::string::npos && mIndex < fullToken->length(); ++mIndex) {
 		
 		if (fullToken->at(mIndex) == '"' && oQuot < 1) {
-			(oDQuot == 0 ? oDQuot = 1 : oDQuot = 0);
+			oDQuot = (oDQuot == 0 ? 1 : 0);
 		}
 		else if (fullToken->at(mIndex) == '\'' && oDQuot < 1) {
-			(oQuot == 0 ? oQuot = 1 : oQuot = 0);
+			oQuot = (oQuot == 0 ? 1 : 0);
 		}
 		else if (fullToken->at(mIndex) == '{' && nBlo == 0 && oDQuot == 0 && oQuot == 0) {++nBlo;lBlo = mIndex;} 
 		
@@ -173,11 +173,11 @@ void blockHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenizes b
 
 //################ TOKENIZE FUNCTIONS ################//
 void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenizes function declarations, call prepareTokenInput BEFORE this (quotes are taken into account) 
-	int endFunc = fullToken->find_last_of(validKeyChars), startFunc = 0;
+	unsigned int endFunc = fullToken->find_last_of(validKeyChars), startFunc = 0;
 	
 	while (endFunc != std::string::npos) {
 		if (endFunc > 0) {startFunc = fullToken->find_last_not_of(validKeyChars, endFunc-1);}
-		else {startFunc = -1;} // the error handling should catch this below 
+		else {startFunc = std::string::npos;} // the error handling should catch this below 
 		
 		if ((startFunc == std::string::npos || fullToken->at(startFunc) != '$' && fullToken->at(startFunc) != '%') && tools::isInteger(fullToken->substr(startFunc+1,endFunc-startFunc)) == false) { // is there any other acceptable instance? 
 			++startFunc;
@@ -209,9 +209,9 @@ void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenize
 			
 			
 			std::string subToken= fullToken->substr(startFunc,endFunc-startFunc);
-			if (subToken.length() <= 0) {
-					continue;
-					//endFunc = fullToken->find_last_of(validKeyChars, startFunc-1);
+			if (subToken.length() == 0) {
+				continue;
+				//endFunc = fullToken->find_last_of(validKeyChars, startFunc-1);
 			}
 			
 			tokID = "«" + tGroup->setData(subToken) + "»";
@@ -223,7 +223,7 @@ void functionHandler(TokenGroup * tGroup, std::string * fullToken) { // tokenize
 			endFunc = fullToken->find_last_of(validKeyChars, startFunc-1);
 			
 		} else {
-			if (startFunc == std::string::npos || startFunc == 0) {endFunc = -1;}
+			if (startFunc == std::string::npos || startFunc == 0) {endFunc = std::string::npos;}
 			else {endFunc = fullToken->find_last_of(validKeyChars, startFunc-1);}
 		}
 	}
@@ -242,14 +242,14 @@ void highPrecedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // ha
 	
 	std::string operatorsOrdered[] = {"+-", "!+-"}; // in order of precedence  ... eventually this is ::       ++/-- (post),      !/++/--/+/- (pre - rToL)
 	
-	for (int i = 0; i < 2; ++i) { // the first two orders of precedence 
+	for (unsigned int i = 0; i < 2 && fullToken->length() > 0; ++i) { // the first two orders of precedence 
 		
 		std::string tokID;
 		
-		int operatorPivot, forceJump = 0;
+		unsigned int operatorPivot, forceJump = 0;
 		if (i == 1) forceJump = fullToken->length()-1;
 		while ((operatorPivot = (i == 1?fullToken->find_last_of(operatorsOrdered[i], forceJump):fullToken->find_first_of(operatorsOrdered[i], forceJump))) != std::string::npos) { // lToR vs rToL
-			int beginPos = 0, termPos = 0;
+			unsigned int beginPos = 0, termPos = 0;
 			
 			if ( i == 0 ) { //posts 
 				
@@ -261,10 +261,10 @@ void highPrecedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // ha
 				}
 				
 				// grab the left side -- beginPos 
-				if (operatorPivot-1 >= 0 && fullToken->at(operatorPivot-1) == '»') {
+				if (operatorPivot >= 1 && fullToken->at(operatorPivot-1) == '»') {
 					beginPos = fullToken->rfind('«', operatorPivot-1); // token (not greedy) (hopefully %vec[]) 
 				}
-				else if (operatorPivot-1 >= 0) { // not very specific ... 
+				else if (operatorPivot >= 1) { // not very specific ... 
 					beginPos = fullToken->find_last_not_of(validKeyChars,operatorPivot-1);
 				}
 				
@@ -281,14 +281,14 @@ void highPrecedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // ha
 				bool dblPre = 0; // is it ++ or --? 
 				
 				// grab the right side -- termPos 
-				if ( operatorPivot-1 >= 0
+				if ( operatorPivot >= 1
 					&& (fullToken->at(operatorPivot) == '+' && fullToken->at(operatorPivot-1) == '+' || fullToken->at(operatorPivot) == '-' && fullToken->at(operatorPivot-1) == '-') 
 					) {
 						--beginPos; // (include 2nd operator portion) 
 						dblPre = 1;
 				}
 				
-				int operatorPivotTemp = operatorPivot; 
+				unsigned int operatorPivotTemp = operatorPivot; 
 				
 				if (operatorPivotTemp+2 < fullToken->length() && fullToken->at(operatorPivotTemp+1) == '$') {
 					termPos = fullToken->find_first_not_of(validKeyChars,operatorPivotTemp+2); // 2 because operators are not of validKeyChars +1 
@@ -298,26 +298,28 @@ void highPrecedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // ha
 				} 
 				else {
 					forceJump = operatorPivot-1; // note: rToL
+					if (operatorPivot == 0) forceJump = 0;  // unsigned (error) 
 					continue;
 				}
 				
 				
 				if ( dblPre != 1 ) { // make sure we don't steal $x+$y from addition (or subtraction) 
-					int operatorPivot2 = operatorPivot; 
-					if (operatorPivot2-1 >= 0 && fullToken->at(operatorPivot2-1) == ' ') --operatorPivot2; // allow for leading spaces, but ignore
-
-					int leftSideTmp = (operatorPivot2-1 >= 0) ? fullToken->find_last_not_of(validKeyChars,operatorPivot2-1) : std::string::npos;
-					if (operatorPivot2-1 >= 0 && fullToken->at(operatorPivot2-1) == '»' 
+					unsigned int operatorPivot2 = operatorPivot; 
+					if (operatorPivot2 >= 1 && fullToken->at(operatorPivot2-1) == ' ') --operatorPivot2; // allow for leading spaces, but ignore
+					
+					unsigned int leftSideTmp = (operatorPivot2 >= 1) ? fullToken->find_last_not_of(validKeyChars,operatorPivot2-1) : std::string::npos;
+					if (operatorPivot2 >= 1 && fullToken->at(operatorPivot2-1) == '»' 
 						|| leftSideTmp != std::string::npos && (fullToken->at(leftSideTmp) == '$' || fullToken->at(leftSideTmp) == '%') 
 						) {
 							forceJump = operatorPivot-1; // note: rToL
+							if (operatorPivot == 0) forceJump = 0;  // unsigned (error) 
 							continue;
 					}
 				}
 				
 				
 				if (termPos == std::string::npos) {termPos = fullToken->length();}
-				if (fullToken->at(termPos-1) == ' ') --termPos; // don't swallow any extra spaces! 
+				if (termPos >= 1 && fullToken->at(termPos-1) == ' ') --termPos; // don't swallow any extra spaces! 
 				
 			}
 			
@@ -346,15 +348,15 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 	
 	std::string operatorsOrdered[] = {"*/%", "+-", "<>", "!=", "&", "|", "="}; // in order of precedence  ... eventually this is ::       "*/%","+-",           "< <= > >=","== !=","and &&","or ||","?:",             "=" 
 	
-	for (int i = 0; i < 7; ++i) { // the seven (so far) orders of precedence 
+	for (unsigned int i = 0; i < 7 && fullToken->length() > 0; ++i) { // the seven (so far) orders of precedence 
 		
 		std::string tokID;
 		
-		int operatorPivot, operatorPivot2, forceJump = 0;
-		const int rToLindex = 6;
+		unsigned int operatorPivot, operatorPivot2, forceJump = 0;
+		const unsigned int rToLindex = 6;
 		if (i == rToLindex) forceJump = fullToken->length()-1;
 		while (  (operatorPivot = (i == rToLindex?fullToken->find_last_of(operatorsOrdered[i], forceJump):fullToken->find_first_of(operatorsOrdered[i], forceJump)))   != std::string::npos) { // lToR vs rToL
-			int beginPos = 0, termPos = 0;
+			unsigned int beginPos = 0, termPos = 0;
 			
 			if ( operatorPivot+1 < fullToken->length() && (i == 3 && fullToken->at(operatorPivot+1) != '=' || i == 4 && fullToken->at(operatorPivot+1) != '&' || i == 5 && fullToken->at(operatorPivot+1) != '|') ) {
 				forceJump = operatorPivot+2; // don't bother if the pair isn't there 
@@ -362,14 +364,14 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			}
 			
 			// grab the left side -- beginPos 
-			int operatorPivotTemp = operatorPivot;
-			if (operatorPivotTemp-1 >= 0 && fullToken->at(operatorPivotTemp-1) == ' ') --operatorPivotTemp; // allow for leading spaces, but ignore
+			unsigned int operatorPivotTemp = operatorPivot;
+			if (operatorPivotTemp >= 1 && fullToken->at(operatorPivotTemp-1) == ' ') --operatorPivotTemp; // allow for leading spaces, but ignore
 			
-			if (operatorPivotTemp-1 >= 0 && fullToken->at(operatorPivotTemp-1) == '»') {
+			if (operatorPivotTemp >= 1 && fullToken->at(operatorPivotTemp-1) == '»') {
 				beginPos = fullToken->find_last_not_of(validTokenChars,operatorPivotTemp-1)+1; // token -- greedy (take all tokens before it!)
 				//beginPos = fullToken->rfind('«', operatorPivot-1); // token (not greedy)
 			}
-			else if (operatorPivotTemp-1 >= 0) {
+			else if (operatorPivotTemp >= 1) {
 				beginPos = fullToken->find_last_not_of(validKeyChars,operatorPivotTemp-1);
 				if (beginPos != std::string::npos && fullToken->at(beginPos) != '$' && fullToken->at(beginPos) != '%') {++beginPos;} // don't snag unless it declares variable type
 			}
@@ -416,14 +418,14 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			else {std::cout << "CRITERROR :: Malformation: Operator format (right)!" <<std::endl;exit(1); /* ERROR HANDLE */ }
 			
 			if (termPos == std::string::npos) {termPos = fullToken->length();}
-			if (fullToken->at(termPos-1) == ' ') --termPos; // don't swallow any extra spaces! 
+			if (termPos > 0 && fullToken->at(termPos-1) == ' ') --termPos; // don't swallow any extra spaces! 
 			
 			
 			
 			std::string subToken = fullToken->substr(beginPos,termPos-beginPos);
 			
 			// strip out surrounding whitespace //
-			int replSize = 2;
+			unsigned int replSize = 2;
 			std::string rmvRepl = "" + tools::charToString(fullToken->at(operatorPivot));
 			std::string rmvRepl2 = "" + tools::charToString(fullToken->at(operatorPivot2));
 			std::string stripMatches[] = {" " + tools::charToString(fullToken->at(operatorPivot)), tools::charToString(fullToken->at(operatorPivot)) + " ", 
@@ -433,7 +435,7 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 			if (operatorPivot != operatorPivot2) 
 				replSize = 4;
 			
-			for (int j = 0; j < replSize; ++j) {
+			for (unsigned int j = 0; j < replSize; ++j) {
 				while (subToken.find(stripMatches[j]) != std::string::npos) {
 					subToken.replace(subToken.find(stripMatches[j]), 2, stripReplaces[j]);
 				}
@@ -457,14 +459,14 @@ void precedenceHandler(TokenGroup * tGroup, std::string * fullToken) { // handle
 
 //################ TOKENIZATION DRIVER (PARENS/VECS) ################//
 void createTokenStruct(std::string input, TokenGroup * tGroup) { // one line at a time -- handles parentheses, functions, and vector decs 
-	int nPar = 0, lPar = 0, nBrac = 0, lBrac = 0; // open parens; index parens; last known paren location; highest level (locally-global); Brac maps with Par functions 
+	unsigned int nPar = 0, lPar = 0, nBrac = 0, lBrac = 0; // open parens; index parens; last known paren location; highest level (locally-global); Brac maps with Par functions 
 	
 	if (SHOW_DEBUGGING) std::cout << "\ncreateTokenStruct:: " << input <<std::endl; //TMP
 	
 	// we already called this before the commands were broken up
 	//prepareTokenInput(dataStructure, tGroup, &input); // store strings as tokens, numbers as vars, handle escape sequences (otherwise they can cause problems here) 
 	
-	for (int mIndex = input.find_first_of("([])"); mIndex != std::string::npos && mIndex < input.length(); ++mIndex) {
+	for (unsigned int mIndex = input.find_first_of("([])"); mIndex != std::string::npos && mIndex < input.length(); ++mIndex) {
 		
 		if (input.at(mIndex) == '(') {++nPar;lPar = mIndex;} 
 		else if (input.at(mIndex) == '[') {++nBrac;lBrac = mIndex;}
@@ -490,11 +492,11 @@ void createTokenStruct(std::string input, TokenGroup * tGroup) { // one line at 
 		else if (input.at(mIndex) == ']' && nBrac > 0) { // handle bracket group (high precedence) -- %x=[5,4] for instance
 			--nBrac;
 			
-			while (mIndex < input.length()-1 && input.at(mIndex+1) == '[') { // find the last of the string %vec[1][2][3]< 
+			while (mIndex+1 < input.length() && input.at(mIndex+1) == '[') { // find the last of the string %vec[1][2][3]< 
 				mIndex = input.find(']', mIndex+1);
 			}
 			
-			int lOccur = lBrac; // the beginning of our block
+			unsigned int lOccur = lBrac; // the beginning of our block
 			if (lOccur > 0 && isalnum(input.at(lOccur-1))) { 
 				lOccur = input.find_last_not_of(validKeyChars,lOccur-1); // find the REAL beginning >%vec[1][2][3] 
 				if (lOccur == std::string::npos || input.at(lOccur) != '%') lOccur = lBrac; // no (real) beginning was found ... fall back!  (this makes Print [1,2,3] work correctly) 

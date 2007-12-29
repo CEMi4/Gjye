@@ -11,8 +11,14 @@
 // class TokenLevel  --  stores tokens horizontally
 
 	/* public */
-	TokenLevel::TokenLevel() {tokCount=0;sealed=false;}
-	TokenLevel::TokenLevel(int a, bool b) {tokCount=a;sealed=b;}
+	TokenLevel::TokenLevel() {
+		this->tokCount=0;
+		this->sealed=false;
+	}
+	TokenLevel::TokenLevel(int a, bool b) {
+		this->tokCount=a;
+		this->sealed=b;
+	}
 /// ################################ ///
 
 
@@ -41,19 +47,21 @@
 	}
 	
 	int TokenGroup::isSealed(int level) const {
-		if (level < numTokens) {return (token.at(level).sealed == true ? 1 : 0);}
+		if (level < 0) return -1;
+		if ((unsigned int) level < numTokens) {return (token.at(level).sealed == true ? 1 : 0);}
 		else {return -1;} // overflow 
 	}
 	
 	bool TokenGroup::seal(int level) {
-		if (level < numTokens) {token.at(level).sealed = true;return true;}
+		if (level < 0) return -1;
+		if ((unsigned int) level < numTokens) {token.at(level).sealed = true;return true;}
 		else {return false;} // overflow 
 	}
 	
 	std::string TokenGroup::setData(std::string data) {
 		if (this->currLevel >= numTokens) {std::cout << "CRITERROR :: Overflow: Vertical token overflow!" <<std::endl;exit(1);} // overflow of levels! 
 		
-		int tokCnt = token.at(this->currLevel).tokCount;
+		unsigned int tokCnt = token.at(this->currLevel).tokCount;
 		if (tokCnt < numTokens) {token.at(this->currLevel).data.push_back(data);}
 		else {
 			this->seal(this->currLevel); // seal it since it's full 
@@ -72,7 +80,11 @@
 	}
 	
 	std::string TokenGroup::getData(int level, int tokCnt) const {
-		if (level <= this->currLevel && tokCnt < token.at(level).tokCount) {return token.at(level).data.at(tokCnt);}
+		if (level < 0 || tokCnt < 0) {
+			std::cout << "CRITERROR :: Invalid parameters given!" <<std::endl;
+			exit(1);
+		}
+		if ((unsigned int) level <= this->currLevel && (unsigned int) tokCnt < token.at(level).tokCount) {return token.at(level).data.at(tokCnt);}
 		else {
 			std::cout << "CRITERROR :: Overflow: TokenGroup::getData() level overflow!" <<std::endl;
 			exit(1);

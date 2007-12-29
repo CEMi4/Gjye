@@ -40,7 +40,7 @@ int main(int argc, char * argv[]) {
 	std::string fullSTDLibrary[] = { "Add", "CharAt", "Exit", "IndexOf", "Join", "Local", "Lc", "LcFirst", "Length", "Print", "Random", "Remove", "Reverse", "Round", "Select", "Split", "ValueOf", "contains", "beginsWith", "isDefined", "Void",        "0x0" };
 	for (int t = 0; fullSTDLibrary[t] != "0x0"; ++t) {
 		tempObj = exec::instantSTDL(&fullSTDLibrary[t]);
-		for (int i = 0; i < tempObj->returnType.size(); ++i) { // multiple types are combined in one, so loop through all possible combos (eg  Add $ to $, Add % to $, etc) 
+		for (unsigned int i = 0; i < tempObj->returnType.size(); ++i) { // multiple types are combined in one, so loop through all possible combos (eg  Add $ to $, Add % to $, etc) 
 			eStack->methodStructure.addMethod(tempObj->returnType[i], "", tempObj->vocabulary, tempObj->paramType[i], tempObj->isOptional, tempObj->isSTDL, tempObj->isPostFixFunc);
 		}
 		delete tempObj;

@@ -21,6 +21,7 @@ bool parseTokID(std::string tokID, int retArry[]) { // turn «#|#» into array of 
 		int index = (tokID.find('¬'));
 		retArry[0] = (int) tools::stringToInt(tokID.substr(0,index));
 		retArry[1] = (int) tools::stringToInt(  tokID.substr(index+1,tokID.length())  );
+		if ( retArry[0] < 0 || retArry[1] < 0) return false; // invalid params 
 		return true;
 	} else {return false;}
 }
@@ -198,7 +199,7 @@ FuncObj * instantSTDL(std::string * objType, std::string * postfixFuncData, Envi
 
 std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::string catalyst) { // driver ... internal tracking is of the form    ~ ^ ^
 	if (catalyst == "-1") {catalyst = tGroup->catalyst;}
-	std::string catalystCpy = ""; catalystCpy = catalyst;
+	std::string catalystCpy = catalyst;
 	FuncObj * thisObj = NULL;
 	
 	std::vector<std::string> tVecVocab, tVecParams, tVecTypes;
@@ -206,7 +207,8 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 	while (catalystCpy.find('«') != std::string::npos && catalystCpy.find('»',catalystCpy.find('«')) != std::string::npos) {
 		bool isOperator = false;
 		std::string tokID = "", levelType = "ValueOf", levelData = "", postfixFuncData = "";
-		int sIndex = 0, eIndex = 0, tokArry[2];
+		unsigned int sIndex = 0, eIndex = 0;
+		int tokArry[2];
 		
 		sIndex = (catalystCpy.find('«'));
 		if (sIndex != std::string::npos)
@@ -218,7 +220,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		if (parseTokID(tokID,tokArry) == false) {std::cout << "ERROR :: Token miss: " << tokID <<std::endl;break;} // token miss!
 		tokID = tGroup->getData(tokArry[0],tokArry[1]);
 		
-		if (tokID.length() <= 0) {std::cout << "ERROR: Empty token: " << tokArry[0] << "¬" << tokArry[1] <<std::endl;exit(1);} // the token has nothing in it!!
+		if (tokID.length() == 0) {std::cout << "ERROR: Empty token: " << tokArry[0] << "¬" << tokArry[1] <<std::endl;exit(1);} // the token has nothing in it!!
 		
 		if (tokID.at(0) == '{' && tokID.at(tokID.length()-1) == '}') { // catch generic block declarations
 			std::string blockData = tokID.substr(1,tokID.length()-2); // look ma, no braces!
@@ -255,7 +257,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			continue;
 		}
 		else if (tokID.at(0) != '«' && isalpha(tokID.at(0)) > 0) { // catch functions -- select«#|#» select «#|#» or select $/%  (« is considered alnum)
-			int oPar,cPar;
+			unsigned int oPar,cPar;
 			oPar = tokID.find_first_not_of(letterChars);
 				if (oPar == std::string::npos) oPar = tokID.length(); // no parameters
 			cPar = tokID.length();
@@ -272,7 +274,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			levelData = tokID;
 		}
 		else if (tokID.find_first_of(operators,1) != std::string::npos) { // get the operators (after position 0), should backswallow !=
-			int oPar,cPar;
+			unsigned int oPar,cPar;
 			oPar = tokID.find_first_of(operators,1);
 			if ( oPar+1 < tokID.length() && tokID.at(oPar) != '?' && tokID.at(oPar) != ':' && tokID.at(oPar+1) == '=' )
 				++oPar;
@@ -282,12 +284,12 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		}
 		else {
 		
-			int tmp = 0;
+			unsigned int tmp = 0;
 			while (  tmp+1 < tokID.length() && (tmp = tokID.find_first_of("&|",tmp+1)) != std::string::npos && tmp+1 < tokID.length() && tokID.at(tmp+1) != tokID.at(tmp) ) // get the && and || operators (after position 0) 
 				++tmp;
 			
 			if ( tmp != std::string::npos && tmp+1 < tokID.length() && ( tokID.at(tmp) == '&' || tokID.at(tmp) == '|' ) && tokID.at(tmp+1) == tokID.at(tmp) ) { // we found a && or || 
-				int oOp, eOp;
+				unsigned int oOp, eOp;
 				char oper = tokID.at( tmp );
 				if (tokID.at( tmp+1 ) == oper)
 					++tmp;
@@ -313,7 +315,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				// GRAB EXPRESSION //
 				std::string tokIDSub = "", ifReturnExpr = "", ifReturnValue = "", returnValue = "", ifReturnRaw = "";
-				int sIndexSub = 0, eIndexSub = 0;
+				unsigned int sIndexSub = 0, eIndexSub = 0;
 				
 				if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == ' ') ++sIndexSub; // we allow a space, but ignore it (jump over it)
 				
@@ -326,7 +328,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				ifReturnExpr = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
-				if ( ifReturnExpr.length() < 1 ) {std::cout << "CRITERROR :: Malformation: While expression (too few tokens - expr)" <<std::endl;exit(1);}
+				if ( ifReturnExpr.length() == 0 ) {std::cout << "CRITERROR :: Malformation: While expression (too few tokens - expr)" <<std::endl;exit(1);}
 				// END GRAB EXPRESSION //
 				
 				
@@ -344,13 +346,13 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
-				if ( tokIDSub.length() < 1 ) {std::cout << "CRITERROR :: Malformation: While expression (too few tokens - block)" <<std::endl;exit(1);}
+				if ( tokIDSub.length() == 0 ) {std::cout << "CRITERROR :: Malformation: While expression (too few tokens - block)" <<std::endl;exit(1);}
 				// END RETRIEVE BLOCK // 
 				
 				
 				ifReturnRaw = runTokenStruct(environment,tGroup,ifReturnExpr);
 				ifReturnValue = tools::prepareVectorData( &environment->dataStructure, ifReturnRaw, false ); // retrieve expression value
-				if (ifReturnRaw.at(1) == '_') environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
+				if ( ifReturnRaw.length() > 0 && ifReturnRaw.at(1) == '_' ) environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
 				if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: While expression (non-numeric)" <<std::endl;exit(1);}
 				
 				// HANDLE EXPR //
@@ -370,7 +372,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 					
 					ifReturnRaw = runTokenStruct(environment,tGroup,ifReturnExpr);
 					ifReturnValue = tools::prepareVectorData( &environment->dataStructure, ifReturnRaw, false ); // retrieve expression value
-					if (ifReturnRaw.at(1) == '_') environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
+					if ( ifReturnRaw.length() > 0 && ifReturnRaw.at(1) == '_' ) environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
 					
 					if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: While expression (non-numeric)" <<std::endl;exit(1);}
 					
@@ -395,8 +397,9 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				if ( levelType == "ElseIf" && tGroup->insideIfBlock == false ) {std::cout << "CRITERROR :: Malformation: ElseIf expression not contained within If segment " <<std::endl;exit(1);}
 				if ( levelType == "ElseIf" && tGroup->openIfBlock == false ) { // already handled, ignore
 					// clean up //
-					int eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
-					catalystCpy.replace(eIndex,1, "");
+					unsigned int eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
+					if (eIndex != std::string::npos) catalystCpy.replace(eIndex,1, "");
+					else std::cout << "WARNING :: Malformation: I couldn't follow the internal tracking for If-ElseIf block (ignore)!" <<std::endl;
 					///
 					
 					continue; 
@@ -404,12 +407,13 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				if (levelType == "If") {
 					sIndex = (catalystCpy.find('^'));
-					catalystCpy.replace(sIndex,1,"~");
+					if (sIndex != std::string::npos) catalystCpy.replace(sIndex,1,"~");
+					else std::cout << "WARNING :: Malformation: I couldn't follow the internal tracking for If block!" <<std::endl;
 				}
 				
 				// GRAB EXPRESSION //
 				std::string tokIDSub = "", ifReturnValue = "", returnValue = "";
-				int sIndexSub = 0, eIndexSub = 0;
+				unsigned int sIndexSub = 0, eIndexSub = 0;
 				
 				if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == ' ') ++sIndexSub; // we allow a space, but ignore it (jump over it)
 				
@@ -423,7 +427,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
-				if ( tokIDSub.length() < 1 ) {std::cout << "CRITERROR :: Malformation: If expression (too few tokens - expr)" <<std::endl;exit(1);}
+				if ( tokIDSub.length() == 0 ) {std::cout << "CRITERROR :: Malformation: If expression (too few tokens - expr)" <<std::endl;exit(1);}
 				
 				tGroup->insideIfBlock = false; // turn off (temporarily) for expression execution 
 				ifReturnValue = tools::prepareVectorData( &environment->dataStructure, runTokenStruct(environment,tGroup,tokIDSub) ); // retrieve expression value -- taints if state
@@ -453,7 +457,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 					
 					tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub); // note: this overwrites the old (expr) definition ... but it doesn't matter at this point 
 					levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
-					if ( tokIDSub.length() < 1 ) {std::cout << "CRITERROR :: Malformation: If expression (too few tokens - block)" <<std::endl;exit(1);}
+					if ( tokIDSub.length() == 0 ) {std::cout << "CRITERROR :: Malformation: If expression (too few tokens - block)" <<std::endl;exit(1);}
 					
 					if (tokIDSub.at(0) == '«') {
 						TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy -- don't screw up the if states
@@ -467,13 +471,14 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 					tGroup->openIfBlock = false;
 					
 					// clean up //
-					int sIndex=0,eIndex=0;
+					unsigned int sIndex=0,eIndex=0;
 					sIndex = (catalystCpy.find('~'));
 					eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
 					if (sIndex == std::string::npos) sIndex = eIndex;
-					else if (sIndex > eIndex) {eIndex = sIndex;}
-					catalystCpy.replace(sIndex,eIndex-sIndex+1, returnValue);
-					///
+					else if (eIndex == std::string::npos || sIndex > eIndex) {eIndex = sIndex;}
+					if (eIndex != std::string::npos) catalystCpy.replace(sIndex,eIndex-sIndex+1, returnValue);
+					else std::cout << "WARNING :: Malformation: I couldn't follow the internal tracking for If-ElseIf block (clean)!" <<std::endl;
+				///
 				}
 				else { // false expression
 					tGroup->openIfBlock = true;
@@ -486,15 +491,16 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				if ( tGroup->insideIfBlock == false ) {std::cout << "CRITERROR :: Malformation: Else expression not contained within If segment " <<std::endl;exit(1);}
 				if ( tGroup->openIfBlock == false ) {
 					// clean up //
-					int eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
-					catalystCpy.replace(eIndex,1, "");
+					unsigned int eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
+					if (eIndex != std::string::npos) catalystCpy.replace(eIndex,1, "");
+					else std::cout << "WARNING :: Malformation: I couldn't follow the internal tracking for Else block!" <<std::endl;
 					///
 					continue;
 				}
 				
 				// HANDLE EXPRESSION //
 				std::string tokIDSub = "", returnValue = "";
-				int sIndexSub = 0, eIndexSub = 0;
+				unsigned int sIndexSub = 0, eIndexSub = 0;
 				
 				if (sIndexSub < levelData.length() && levelData.at(sIndexSub) == ' ') ++sIndexSub; // we allow a space, but ignore it (jump over it)
 				
@@ -508,7 +514,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				tokIDSub = levelData.substr(sIndexSub,eIndexSub-sIndexSub);
 				levelData.replace(sIndexSub,eIndexSub-sIndexSub,"^");
-				if ( tokIDSub.length() < 1 ) {std::cout << "CRITERROR :: Malformation: Else expression (too few tokens - block)" <<std::endl;exit(1);}
+				if ( tokIDSub.length() == 0 ) {std::cout << "CRITERROR :: Malformation: Else expression (too few tokens - block)" <<std::endl;exit(1);}
 				// END HANDLE EXPRESSION //
 				
 				if (tokIDSub.at(0) == '«') {
@@ -524,12 +530,13 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				tGroup->openIfBlock = false;
 				
 				// clean up //
-				int sIndex=0,eIndex=0;
+				unsigned int sIndex=0,eIndex=0;
 				sIndex = (catalystCpy.find('~'));
 				eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
 				if (sIndex == std::string::npos) sIndex = eIndex;
 				else if (sIndex > eIndex) {eIndex = sIndex;}
-				catalystCpy.replace(sIndex,eIndex-sIndex+1, returnValue);
+				if (eIndex != std::string::npos) catalystCpy.replace(sIndex,eIndex-sIndex+1, returnValue);
+				else std::cout << "WARNING :: Malformation: I couldn't follow the internal tracking for Else block!" <<std::endl;
 				///
 				
 				continue;
@@ -539,11 +546,11 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				tGroup->openIfBlock = false;
 				
 				// clean up //
-				int sIndex=0,eIndex=0;
+				unsigned int sIndex=0,eIndex=0;
 				sIndex = (catalystCpy.find('~'));
 				if (sIndex != std::string::npos) {
 					eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
-					if (sIndex < eIndex) {
+					if (eIndex != std::string::npos && sIndex < eIndex) {
 						catalystCpy.replace(sIndex,eIndex-sIndex+1, "");
 					}
 				}
@@ -585,8 +592,9 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				tokenQualifier.insert(0,"$");
 			
 				// clean up //
-				int eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
-				catalystCpy.replace(eIndex,1, tokenQualifier); 
+				unsigned int eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
+				if (eIndex != std::string::npos) catalystCpy.replace(eIndex,1, tokenQualifier); 
+				else std::cout << "WARNING :: Malformation: I couldn't follow the internal tracking for Lazy Operators!" <<std::endl;
 				///
 				
 				continue;
@@ -611,17 +619,18 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			
 			
 			sIndex = (catalystCpy.find('^'));
-			catalystCpy.replace(sIndex,1,"~");
+			if (sIndex != std::string::npos) catalystCpy.replace(sIndex,1,"~");
+			else std::cout << "WARNING :: Malformation: I couldn't follow the internal tracking for this input (fn)!" <<std::endl;
 			
 			 // grab prefixed result and store in postfixFuncData for parsing later ... remove prefixed data
 			if (isOperator == false && environment->methodStructure.isPostFixFunc(levelType) == true) {
-				int sIndex = (catalystCpy.rfind('%',catalystCpy.find('~'))), eIndex = catalystCpy.find('~'); // go for the gusto
+				unsigned int sIndex = (catalystCpy.rfind('%',catalystCpy.find('~'))), eIndex = catalystCpy.find('~'); // go for the gusto
 				if (sIndex == std::string::npos) sIndex = (catalystCpy.rfind('$',catalystCpy.find('~'))); // or fall back
-				if (sIndex == std::string::npos) {std::cout << "CRITERROR :: Malformation: Failure to grab prefix expression before " << levelType << "()!" <<std::endl;exit(1);}
+				if (sIndex == std::string::npos || eIndex == std::string::npos) {std::cout << "CRITERROR :: Malformation: Failure to grab prefix expression before " << levelType << "()!" <<std::endl;exit(1);}
 				
-				if (catalystCpy.at(eIndex-1) == ' ') --eIndex; // fix the extra space problem (not vector)
+				if (eIndex > 0 && catalystCpy.at(eIndex-1) == ' ') --eIndex; // fix the extra space problem (not vector)
 				postfixFuncData = catalystCpy.substr(sIndex,eIndex-sIndex);
-				if (eIndex < catalystCpy.length()-1 && catalystCpy.at(eIndex) == ' ') ++eIndex; // and then put it back
+				if (eIndex+1 < catalystCpy.length() && catalystCpy.at(eIndex) == ' ') ++eIndex; // and then put it back
 				catalystCpy.replace(sIndex,eIndex-sIndex,"");
 				if (SHOW_DEBUGGING) std::cout << "postfixFuncData: " << postfixFuncData <<std::endl; //TMP
 			}
@@ -701,11 +710,13 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		
 		if (thisObj != NULL && levelType == "ValueOf") { // for valueof, purge the object after one loop  (fixes   Select (1),(3)  problem -- we can't chain the valueof method!)
 			// clean up //
-			int sIndex=0,eIndex=0;
+			unsigned int sIndex=0,eIndex=0;
 			sIndex = (catalystCpy.find('~'));
 			eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
-			if (sIndex > eIndex) {eIndex = sIndex;}
-			catalystCpy.replace(sIndex,eIndex-sIndex+1, thisObj->executeCode()); // and execute object
+			if (sIndex == std::string::npos) sIndex = eIndex;
+			else if (eIndex == std::string::npos || sIndex > eIndex) {eIndex = sIndex;}
+			if (sIndex != std::string::npos && eIndex != std::string::npos) catalystCpy.replace(sIndex,eIndex-sIndex+1, thisObj->executeCode()); // and execute object
+			else std::cout << "WARNING :: Malformation: I couldn't follow the internal tracking for this input (vof-fn)!" <<std::endl;
 			///
 			
 			delete thisObj;
@@ -723,7 +734,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			if (methDef->isSTDL == true)
 				thisObj = instantSTDL(&tVecVocab.at(0), NULL, environment);
 			
-			for (int i = 0; i < tVecVocab.size(); ++i) {
+			for (unsigned int i = 0; i < tVecVocab.size(); ++i) {
 				if (thisObj->setLevelData(tVecVocab.at(i),tVecParams.at(i))) {
 					if (SHOW_DEBUGGING) std::cout << "PUSHSUC: " << tVecVocab.at(i) << "() " << thisObj->getLevelData(tVecVocab.at(i)) <<std::endl; //TMP
 				} else {std::cout << "CRITERROR :: Malformation: Failure to push function " << tVecVocab.at(i) << "()!" <<std::endl;exit(1);} //TMP
@@ -731,7 +742,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			
 		} else {
 			std::cout << "CRITERROR :: Malformation: Failure to build unknown function " << tVecVocab.at(0) << "()!" <<std::endl;
-			for (int i = 0; i < tVecVocab.size(); ++i) std::cout << tVecVocab.at(i) << " and " << tVecParams.at(i) << " of " << tVecTypes.at(i) <<std::endl;
+			for (unsigned int i = 0; i < tVecVocab.size(); ++i) std::cout << tVecVocab.at(i) << " and " << tVecParams.at(i) << " of " << tVecTypes.at(i) <<std::endl;
 			exit(1);
 		}
 	}
@@ -739,11 +750,13 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 	
 	if (thisObj != NULL) { // execute the build funcs only
 		// clean up //
-		int sIndex=0,eIndex=0;
+		unsigned int sIndex=0,eIndex=0;
 		sIndex = (catalystCpy.find('~'));
 		eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
-		if (sIndex > eIndex) {eIndex = sIndex;}
-		catalystCpy.replace(sIndex,eIndex-sIndex+1, thisObj->executeCode());
+		if (sIndex == std::string::npos) sIndex = eIndex;
+		else if (eIndex == std::string::npos || sIndex > eIndex) {eIndex = sIndex;}
+		if (sIndex != std::string::npos && eIndex != std::string::npos) catalystCpy.replace(sIndex,eIndex-sIndex+1, thisObj->executeCode());
+		else std::cout << "WARNING :: Malformation: I couldn't follow the internal tracking for this input (bld-fn)!" <<std::endl;
 		///
 		
 		delete thisObj;

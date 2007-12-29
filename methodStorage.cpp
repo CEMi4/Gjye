@@ -28,14 +28,14 @@
 	void MethodDefinition::toString() const {
 		if (this->isPostFixFunc == true) std::cout << "* ";
 		
-		for (int i = 0; i < this->vocabulary.size() && vocabulary.at(i).size() > 0; ++i) 
+		for (unsigned int i = 0; i < this->vocabulary.size() && vocabulary.at(i).size() > 0; ++i) 
 			std::cout << this->vocabulary.at(i).begin()->first << "(" << this->paramType.at(i) << (this->isOptional.at(i) ? "=" : "") << ")  ";
 		std::cout << "returns " << this->returnType << std::endl;
 	}
 	
 	
 	int MethodDefinition::calculateMatch(std::vector<std::string> vocab, std::vector<std::string> types) const {
-		int numberSkipped = 0, vocabLoc = 0, i;
+		unsigned int numberSkipped = 0, vocabLoc = 0, i;
 		
 		for (i = 0; i < vocab.size() && vocabLoc < this->vocabulary.size(); ++vocabLoc) {
 			if (this->vocabulary[vocabLoc].find(vocab[i]) == this->vocabulary[vocabLoc].end() 
