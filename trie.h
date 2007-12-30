@@ -34,7 +34,7 @@ private:
 public: 
 	
 	trie() {
-		std::cout << "CREATE" <<std::endl;
+		//std::cout << "CREATE" <<std::endl;
 		this->blackptrs = new trie<oType>*[63];
 		this->whiteptr = NULL;
 		this->substr = "";
@@ -44,7 +44,7 @@ public:
 		this->numChildren = 0;
 	}
 	trie( const trie<oType> & cpTrie ) {
-		std::cout << "COPY" <<std::endl;
+		//std::cout << "COPY" <<std::endl;
 		if (cpTrie.blackptrs != NULL) {
 			for (int i = 0; i < 63; ++i) {
 				if (cpTrie.blackptrs[i] != NULL) this->blackptrs[i] = new trie<oType>( *cpTrie.blackptrs[i] );
@@ -55,7 +55,7 @@ public:
 		this->numChildren = cpTrie.numChildren;
 	}
 	trie<oType>& operator=( const trie<oType> & cpTrie ) {
-		std::cout << "CPYASSGN" <<std::endl;
+		//std::cout << "CPYASSGN" <<std::endl;
 		if (this != &cpTrie) {
 			this->~trie();
 			if (cpTrie.blackptrs != NULL) {
@@ -70,7 +70,7 @@ public:
 		return *this;
 	}
 	~trie() {
-		std::cout << "DESTROY" <<std::endl;
+		//std::cout << "DESTROY" <<std::endl;
 		if (this->whiteptr != NULL) delete this->whiteptr;
 		if (this->blackptrs != NULL) {
 			for (int i = 0; i < 63; ++i) {
@@ -144,8 +144,8 @@ public:
 				basePtr->blackptrs[hashIndex]->substr = key; // not overwriting (new entry) ... prefix = &basePtr->blackptrs[hashIndex]->substr 
 				basePtr->numChildren++;
 				basePtr->blackptrs[hashIndex]->whiteptr = new oType(value); // copy 
-				std::cout << "VALVALVLA1: " << key << " vs " << basePtr->blackptrs[hashIndex]->substr << std::endl;
-				std::cout << "IN: " << *basePtr->blackptrs[hashIndex]->whiteptr << std::endl;
+				//std::cout << "VALVALVLA1: " << key << " vs " << basePtr->blackptrs[hashIndex]->substr << std::endl;
+				//std::cout << "IN: " << *basePtr->blackptrs[hashIndex]->whiteptr << std::endl;
 				return true;
 			}
 			
@@ -153,15 +153,15 @@ public:
 			for (i = 1; i < key.length() && i < prefix->length(); ++i) { // we already know the first char matches 
 				if ( key.at(i) != prefix->at(i) ) break;
 			}
-			std::cout << "VALVALVLA2: " << key << " vs " << basePtr->blackptrs[hashIndex]->substr << std::endl;
+			//std::cout << "VALVALVLA2: " << key << " vs " << basePtr->blackptrs[hashIndex]->substr << std::endl;
 			
 			
 			if ( i == prefix->length() && i == key.length() ) { // white entry overwrite: exact match (and not first entry ... otherwise prefix == NULL would've caught it) 
 				if (basePtr->blackptrs[hashIndex]->whiteptr != NULL) 
 					delete basePtr->blackptrs[hashIndex]->whiteptr; // no memory leaks 
 				basePtr->blackptrs[hashIndex]->whiteptr = new oType(value); // copy 
-				std::cout << "VALVALVLA1.5: " << key << " vs " << basePtr->blackptrs[hashIndex]->substr << std::endl;
-				std::cout << "IN: " << *basePtr->blackptrs[hashIndex]->whiteptr << std::endl;
+				//std::cout << "VALVALVLA1.5: " << key << " vs " << basePtr->blackptrs[hashIndex]->substr << std::endl;
+				//std::cout << "IN: " << *basePtr->blackptrs[hashIndex]->whiteptr << std::endl;
 				return true;
 			}
 			else if ( i == prefix->length() ) { // prefix is a subset of the key (note: i != key.length() or we would've hit above) 
@@ -185,8 +185,8 @@ public:
 			
 			if (key == newPrefix) { // white entry (eg tes vs test) 
 				basePtr->blackptrs[hashIndex]->whiteptr = new oType(value); // copy 
-				std::cout << "VALVALVLA3: " << key << " vs " << basePtr->blackptrs[hashIndex]->substr << std::endl;
-				std::cout << "IN: " << *basePtr->blackptrs[hashIndex]->whiteptr << std::endl;
+				//std::cout << "VALVALVLA3: " << key << " vs " << basePtr->blackptrs[hashIndex]->substr << std::endl;
+				//std::cout << "IN: " << *basePtr->blackptrs[hashIndex]->whiteptr << std::endl;
 				return true; /// the number of children stays the same! (we just swapped it out) 
 			} else { // black ... keep poking 
 				basePtr = basePtr->blackptrs[hashIndex]; // note: this is different than above! (basePtr->blackptrs[hashIndex] changed) 
@@ -231,7 +231,7 @@ public:
 						delete basePtr->blackptrs[hashIndex];
 						basePtr->blackptrs[hashIndex] = NULL;
 						basePtr->numChildren--;
-						std::cout << "CMPR: " << basePtr->substr << " :: " << basePtr->numChildren <<std::endl;
+						//std::cout << "CMPR: " << basePtr->substr << " :: " << basePtr->numChildren <<std::endl;
 					}
 					
 					if (basePtr->numChildren == 1 && basePtr->whiteptr == NULL) { // merge if only one child (including white node) 
@@ -251,7 +251,7 @@ public:
 						delete basePtr->blackptrs[rem];
 						basePtr->blackptrs = tmpBlkPtr;
 						
-						std::cout << "REM:: " << basePtr->substr << " - " << rem <<std::endl;
+						//std::cout << "REM:: " << basePtr->substr << " - " << rem <<std::endl;
 					} // is it safe to assume that if basePtr->numChildren == 0 then basePtr->whiteptr != NULL ? 
 					
 					return true;

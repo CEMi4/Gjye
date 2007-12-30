@@ -207,45 +207,6 @@
 	
 	
 	bool VariableStorage::addVariable(std::string thisName, std::string thisData, int insPos) { // use getVector first to jump to the level! 
-		int tobj = 33;
-		this->test.insert( "tes", tobj );
-		std::cout << "RET: " << this->test.find( "tes" ) << std::endl;
-		tobj = 444;
-		this->test.insert( "tests", tobj );
-		std::cout << "RET: " << this->test.find( "tests" ) << std::endl;
-		++tobj;
-		this->test.insert( "testing", tobj );
-		std::cout << "RET: " << this->test.find( "testing" ) << std::endl;
-		++tobj;
-		this->test.insert( "tester", tobj );
-		std::cout << "RET: " << this->test.find( "tester" ) << std::endl;
-		++tobj;
-		this->test.insert( "test", tobj );
-		std::cout << "RET: " << this->test.find( "test" ) << std::endl;
-		++tobj;
-		this->test.insert( "tessa", tobj );
-		std::cout << "RET: " << this->test.find( "tessa" ) << std::endl;
-		
-		std::cout << "=======================" << std::endl;
-		this->test.remove( "tests" );
-		this->test.remove( "test" );
-		this->test.remove( "testing" );
-		++tobj;
-		this->test.insert( "tester", tobj );
-		std::cout << "RET: " << this->test.find( "tester" ) << std::endl;
-		++tobj;
-		this->test.insert( "tests", tobj );
-		std::cout << "RET: " << this->test.find( "tests" ) << std::endl;
-		++tobj;
-		this->test.insert( "testing", tobj );
-		std::cout << "RET: " << this->test.find( "testing" ) << std::endl;
-		while (true) {
-			++tobj;
-			this->test.insert( "tester", tobj );
-			std::cout << "RET: " << this->test.find( "tester" ) << std::endl;
-			this->test.remove( "tester" );
-		}
-		
 		if (this->arrayAutoIndex >= 0 && (thisName == "" || tools::isInteger(thisName))) { // arrays 
 			if (thisName == "" && insPos < 0) {
 				thisName = tools::intToString(this->arrayAutoIndex);

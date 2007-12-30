@@ -3,7 +3,7 @@
 
 SHELL = /bin/sh
 
-OBJS = objs/trie.o objs/blockWrappers.o objs/createTokenStruct.o objs/execTokenStruct.o objs/miscTools.o objs/objMethods.o \
+OBJS = objs/blockWrappers.o objs/createTokenStruct.o objs/execTokenStruct.o objs/miscTools.o objs/objMethods.o \
 	objs/operMethods.o objs/tokenGroups.o objs/varStorage.o objs/methodStorage.o objs/enviroWrap.o 
 CXX = g++
 CDEBUG = -g
@@ -62,11 +62,8 @@ objs/operMethods.o: operMethods.cpp operMethods.h
 objs/tokenGroups.o: tokenGroups.cpp tokenGroups.h
 	$(CXX) $(CXXFLAGS) -c tokenGroups.cpp -o objs/tokenGroups.o
 
-objs/varStorage.o: varStorage.cpp varStorage.h trie.h
+objs/varStorage.o: varStorage.cpp varStorage.h
 	$(CXX) $(CXXFLAGS) -c varStorage.cpp -o objs/varStorage.o
-
-objs/trie.o: trie.cpp trie.h
-	$(CXX) $(CXXFLAGS) -c trie.cpp -o objs/trie.o
 
 objs/methodStorage.o: methodStorage.cpp methodStorage.h
 	$(CXX) $(CXXFLAGS) -c methodStorage.cpp -o objs/methodStorage.o

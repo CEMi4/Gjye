@@ -6,7 +6,6 @@ extern bool SHOW_DEBUGGING;
 #include <map>
 #include <vector>
 #include <stdint.h>
-#include "trie.h"
 
 //################ PROTOTYPES ################//
 struct strCmp {
@@ -53,7 +52,6 @@ public:
 class VariableStorage {
 protected: 
 	std::map<std::string, InternalDataType *, strCmp> dataNames; // must be a pointer for mult. references 
-	gstl::trie<int> test;
 	
 	int startVariableReference; // 1000000000 -- hopefully find a better way than this later 
 	int arrayAutoIndex;
