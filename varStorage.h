@@ -53,7 +53,7 @@ public:
 class VariableStorage {
 protected: 
 	std::map<std::string, InternalDataType *, strCmp> dataNames; // must be a pointer for mult. references 
-	//gstl::trie<int> test;
+	gstl::trie<int> test;
 	
 	int startVariableReference; // 1000000000 -- hopefully find a better way than this later 
 	int arrayAutoIndex;
