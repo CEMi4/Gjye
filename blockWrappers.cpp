@@ -7,7 +7,6 @@
 #include "miscTools.h"
 #include "createTokenStruct.h"
 #include "execTokenStruct.h"
-#include "objMethods.h"
 
 
 //################ BLOCK WRAPPER ################//
@@ -24,11 +23,15 @@
 		
 		this->environment->dataStructure.pushStorage(); // new blocks get new top level DS's
 		this->environment->methodStructure.pushStorage(); // new blocks get new TLM stacks 
+		
+		this->sovtGroup = new TokenGroup;
+		create::blockHandler(this->sovtGroup, &this->codeInput);
 	}
 	BlockWrap::~BlockWrap() {
 		if (this->environment->dataStructure.stackSize() > 0) {this->environment->dataStructure.pop();}
 		if (this->environment->methodStructure.stackSize() > 0) {this->environment->methodStructure.pop();}
-		delete environment;
+		delete this->environment;
+		delete this->sovtGroup;
 	}
 	void BlockWrap::importDataStack(EnviroWrap * storage) {
 		this->environment = storage;
@@ -37,15 +40,9 @@
 		this->environment->dataStructure.clearMemory();
 	}
 	
-	void BlockWrap::tokenizeBlocks(TokenGroup * tGroup) { // interface 
-		create::blockHandler(tGroup, &this->codeInput);
-	}
 	
 	
 	std::string BlockWrap::executeCode() {
-		TokenGroup * sovtGroup = new TokenGroup /*, * tGroup = NULL*/ ;
-		
-		this->tokenizeBlocks(sovtGroup); // tokenize blocks (now so we don't have token overlap in blocks later) 
 		
 		int start = 0;
 		while (this->codeInput.find("»", start) != std::string::npos) {
@@ -54,7 +51,7 @@
 			++start;
 		}
 		
-		create::prepareTokenInput(this->environment, sovtGroup, &this->codeInput);
+		create::prepareTokenInput(this->environment, this->sovtGroup, &this->codeInput);
 		
 		std::string fullUserInput = this->codeInput, 
 			singleInput = "", returnValue="";
@@ -83,10 +80,10 @@
 			
 			if (singleInput != "") {
 				//tGroup = new TokenGroup(sovtGroup); // (shallow) copy 
-				create::createTokenStruct(singleInput,sovtGroup);
-				if (SHOW_DEBUGGING) {std::cout << "\n\ncatalyst -> " << sovtGroup->catalyst <<std::endl;}
+				create::createTokenStruct(singleInput, this->sovtGroup);
+				if (SHOW_DEBUGGING) {std::cout << "\n\ncatalyst -> " << this->sovtGroup->catalyst <<std::endl;}
 				
-				returnValue = exec::runTokenStruct(this->environment, sovtGroup);
+				returnValue = exec::runTokenStruct(this->environment, this->sovtGroup);
 				
 				if (SHOW_DEBUGGING) {
 					std::cout << "\n\n=======================================\n\n" 
@@ -103,8 +100,6 @@
 				//if (tGroup != NULL) {delete tGroup;}
 			}
 		}
-		
-		delete sovtGroup;
 		
 		returnValue = tools::prepareVectorData( &this->environment->dataStructure, returnValue, false );
 		

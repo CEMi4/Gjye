@@ -41,34 +41,34 @@ endif
 $(OUT): gjye++.cpp gjye++.h $(OBJS) $(RES)
 	$(CXX) $(CXXFLAGS) -o $(OUT) gjye++.cpp $(OBJS) $(RES)
 
-objs/blockWrappers.o: blockWrappers.cpp blockWrappers.h
+objs/blockWrappers.o: blockWrappers.cpp blockWrappers.h gjye++.h miscTools.h createTokenStruct.h execTokenStruct.h enviroWrap.h methodStorage.h varStorage.h tokenGroups.h
 	$(CXX) $(CXXFLAGS) -c blockWrappers.cpp -o objs/blockWrappers.o
 
-objs/createTokenStruct.o: createTokenStruct.cpp createTokenStruct.h
+objs/createTokenStruct.o: createTokenStruct.cpp createTokenStruct.h gjye++.h miscTools.h enviroWrap.h varStorage.h tokenGroups.h
 	$(CXX) $(CXXFLAGS) -c createTokenStruct.cpp -o objs/createTokenStruct.o
 
-objs/execTokenStruct.o: execTokenStruct.cpp execTokenStruct.h
+objs/execTokenStruct.o: execTokenStruct.cpp execTokenStruct.h methodStorage.h gjye++.h miscTools.h blockWrappers.h enviroWrap.h varStorage.h tokenGroups.h objMethods.h operMethods.h
 	$(CXX) $(CXXFLAGS) -c execTokenStruct.cpp -o objs/execTokenStruct.o
 
-objs/miscTools.o: miscTools.cpp miscTools.h
+objs/miscTools.o: miscTools.cpp miscTools.h gjye++.h varStorage.h
 	$(CXX) $(CXXFLAGS) -c miscTools.cpp -o objs/miscTools.o
 
-objs/objMethods.o: objMethods.cpp objMethods.h
+objs/objMethods.o: objMethods.cpp objMethods.h miscTools.h varStorage.h
 	$(CXX) $(CXXFLAGS) -c objMethods.cpp -o objs/objMethods.o
 
-objs/operMethods.o: operMethods.cpp operMethods.h
+objs/operMethods.o: operMethods.cpp operMethods.h miscTools.h varStorage.h objMethods.h
 	$(CXX) $(CXXFLAGS) -c operMethods.cpp -o objs/operMethods.o
 
-objs/tokenGroups.o: tokenGroups.cpp tokenGroups.h
+objs/tokenGroups.o: tokenGroups.cpp tokenGroups.h miscTools.h gjye++.h
 	$(CXX) $(CXXFLAGS) -c tokenGroups.cpp -o objs/tokenGroups.o
 
-objs/varStorage.o: varStorage.cpp varStorage.h
+objs/varStorage.o: varStorage.cpp varStorage.h miscTools.h gjye++.h 
 	$(CXX) $(CXXFLAGS) -c varStorage.cpp -o objs/varStorage.o
 
-objs/methodStorage.o: methodStorage.cpp methodStorage.h
+objs/methodStorage.o: methodStorage.cpp methodStorage.h execTokenStruct.h blockWrappers.h 
 	$(CXX) $(CXXFLAGS) -c methodStorage.cpp -o objs/methodStorage.o
 
-objs/enviroWrap.o: enviroWrap.cpp enviroWrap.h
+objs/enviroWrap.o: enviroWrap.cpp enviroWrap.h methodStorage.h varStorage.h
 	$(CXX) $(CXXFLAGS) -c enviroWrap.cpp -o objs/enviroWrap.o
 
 # windows icon 

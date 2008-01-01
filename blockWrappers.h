@@ -17,6 +17,7 @@ class BlockWrap {
 protected: 
 	std::string codeInput;
 	EnviroWrap * environment; // declare (locally) global variable storage object
+	TokenGroup * sovtGroup;
 	
 public: 
 	BlockWrap(std::string = "", const EnviroWrap * = NULL);
@@ -24,7 +25,6 @@ public:
 	void importDataStack(EnviroWrap *);
 	virtual void clearMemoryStack();
 	
-	virtual void tokenizeBlocks(TokenGroup *); // only tokenize when it's a class 
 	std::string executeCode();
 	
 };
