@@ -26,12 +26,21 @@
 		
 		this->sovtGroup = new TokenGroup;
 		create::blockHandler(this->sovtGroup, &this->codeInput);
+		
+		int start = 0;
+		while (this->codeInput.find("»", start) != std::string::npos) {
+			start = this->codeInput.find("»", start);
+			this->codeInput.replace(start, 1, "».");
+			++start;
+		}
+		
+		create::prepareTokenInput(this->environment, this->sovtGroup, &this->codeInput);
 	}
 	BlockWrap::~BlockWrap() {
 		if (this->environment->dataStructure.stackSize() > 0) {this->environment->dataStructure.pop();}
 		if (this->environment->methodStructure.stackSize() > 0) {this->environment->methodStructure.pop();}
-		delete this->environment;
-		delete this->sovtGroup;
+		if (this->environment != NULL) delete this->environment;
+		if (this->sovtGroup != NULL) delete this->sovtGroup;
 	}
 	void BlockWrap::importDataStack(EnviroWrap * storage) {
 		this->environment = storage;
@@ -43,18 +52,9 @@
 	
 	
 	std::string BlockWrap::executeCode() {
-		
-		int start = 0;
-		while (this->codeInput.find("»", start) != std::string::npos) {
-			start = this->codeInput.find("»", start);
-			this->codeInput.replace(start, 1, "».");
-			++start;
-		}
-		
-		create::prepareTokenInput(this->environment, this->sovtGroup, &this->codeInput);
-		
 		std::string fullUserInput = this->codeInput, 
 			singleInput = "", returnValue="";
+		TokenGroup * tGroup = new TokenGroup(this->sovtGroup);
 		
 		unsigned int eIndex;
 		while (fullUserInput != "") { // exec each command given 
@@ -79,11 +79,10 @@
 			}
 			
 			if (singleInput != "") {
-				//tGroup = new TokenGroup(sovtGroup); // (shallow) copy 
-				create::createTokenStruct(singleInput, this->sovtGroup);
-				if (SHOW_DEBUGGING) {std::cout << "\n\ncatalyst -> " << this->sovtGroup->catalyst <<std::endl;}
+				create::createTokenStruct(singleInput, tGroup);
+				if (SHOW_DEBUGGING) {std::cout << "\n\ncatalyst -> " << tGroup->catalyst <<std::endl;}
 				
-				returnValue = exec::runTokenStruct(this->environment, this->sovtGroup);
+				returnValue = exec::runTokenStruct(this->environment, tGroup);
 				
 				if (SHOW_DEBUGGING) {
 					std::cout << "\n\n=======================================\n\n" 
@@ -92,16 +91,12 @@
 				}
 				
 				singleInput = "";
-				
-				// blindly update If states 
-				//sovtGroup->openIfBlock = tGroup->openIfBlock;
-				//sovtGroup->insideIfBlock = tGroup->insideIfBlock;
-				
-				//if (tGroup != NULL) {delete tGroup;}
 			}
 		}
 		
 		returnValue = tools::prepareVectorData( &this->environment->dataStructure, returnValue, false );
+		
+		if (tGroup != NULL) delete tGroup;
 		
 		return returnValue;
 	}
