@@ -355,33 +355,56 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				if ( ifReturnRaw.length() > 0 && ifReturnRaw.at(1) == '_' ) environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
 				if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: While expression (non-numeric)" <<std::endl;exit(1);}
 				
-				// HANDLE EXPR //
-				while ( 1 ) {
-					if (returnValue != "") environment->dataStructure.removeVariable( returnValue.substr(1)  ); // clean up 
+				
+				// BUILD THE BLOCK THAT WE'RE EXECUTING // 
+				std::string blockData; 
+				
+				if (tokIDSub.find('«') != std::string::npos && tokIDSub.find('»',tokIDSub.find('«')) != std::string::npos) { // take care of sublevels
+					std::string tokID, tokVal;
+					int sIndex = 0, eIndex = 0, tokArry[2];
 					
-					if ( (int) tools::stringToInt( ifReturnValue ) != 0 ) { // true expression
-						if (tokIDSub.at(0) == '«') {
-							TokenGroup * tGroupCpy = new TokenGroup(tGroup); // (shallow) copy -- don't screw up the if states
-							returnValue = runTokenStruct(environment,tGroupCpy,tokIDSub); // execute If/ElseIf block
-							delete tGroupCpy;
-						}
-					} else { // false expression
-						break;
+					sIndex = (tokIDSub.find('«'));
+					eIndex = (tokIDSub.find('»',sIndex));
+					tokID = tokIDSub.substr(sIndex,eIndex-sIndex+1);
+					
+					if (parseTokID(tokID,tokArry) == false) {break;} // stop parsing the vector (we couldn't successfully parse an internal token)
+					tokVal = tGroup->getData(tokArry[0],tokArry[1]);
+					
+					if ( tokVal.at(0) == '{' && tokVal.at(tokVal.length()-1) == '}' ) {
+						blockData = tokVal.substr(1,tokVal.length()-2);  // look ma, no braces!
+					} else blockData =  tokVal;
+					
+				} else blockData =  tokIDSub;
+				BlockWrap * tempBlock = NULL;
+				tempBlock = new BlockWrap(blockData, environment);
+				// END BUILD BLOCK // 
+				
+				
+				// HANDLE EXPR //
+				while ( (int) tools::stringToInt( ifReturnValue ) != 0 ) {
+					if (tempBlock != NULL) {
+						returnValue = tempBlock->executeCode(); // note: RAW data is returned here, so it must be treated below!  
 					}
 					// END HANDLE EXPR //
 					
+					
+					// CHECK IF CONDITION STILL TRUE // 
 					ifReturnRaw = runTokenStruct(environment,tGroup,ifReturnExpr);
 					ifReturnValue = tools::prepareVectorData( &environment->dataStructure, ifReturnRaw, false ); // retrieve expression value
 					if ( ifReturnRaw.length() > 0 && ifReturnRaw.at(1) == '_' ) environment->dataStructure.removeVariable( ifReturnRaw.substr(1)  ); // clean up 
 					
 					if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: While expression (non-numeric)" <<std::endl;exit(1);}
-					
-					if ( (int) tools::stringToInt( ifReturnValue ) == 0 ) break; // do this to save the returnValue 
+					// DONE CHECK // 
 				}
 				
+				std::string tokenQualifier = environment->dataStructure.variableReferencer("_STRING_"); // save the return value to a temp value, then return THAT 
+				environment->dataStructure.addVariable(tokenQualifier,returnValue, -1, true);
+				tokenQualifier.insert(0,"$");
+				
 				// clean up //
+				if (tempBlock != NULL) delete tempBlock; // destroy the block 
 				int eIndex = (catalystCpy.rfind('^',catalystCpy.length()-1));
-				catalystCpy.replace(eIndex,1, returnValue);
+				catalystCpy.replace(eIndex,1, tokenQualifier);
 				///
 				
 				continue;

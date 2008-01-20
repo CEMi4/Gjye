@@ -468,7 +468,7 @@
 	
 	
 	VariableStorage * DataStorageStack::getVector(std::string thisName, bool purgeTransient) {
-		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
+		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
 		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
 			if ((*iter)->variableExists(thisName)) {return (*iter)->getVector(thisName, purgeTransient);}
@@ -479,7 +479,7 @@
 	
 	
 	VariableStorage * DataStorageStack::vecStringToVector(std::string * thisName, bool checkBaseExistence, bool returnNullOnNonExistance) {
-		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
+		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
 		
 		unsigned int lIndex = thisName->find_first_not_of(validKeyChars); // find the base existence, not higher! %vec<  not %vec[1][2] 
 		if (lIndex == std::string::npos) {lIndex = thisName->length()-1;}
@@ -494,7 +494,7 @@
 	
 	
 	std::string DataStorageStack::getData(std::string thisName, bool purgeTransient) {
-		std::vector<VariableStorage *>::const_reverse_iterator iter = this->dataStack.rbegin();
+		std::vector<VariableStorage *>::reverse_iterator iter = this->dataStack.rbegin();
 		
 		for (; iter != this->dataStack.rend(); ++iter) {	// otherwise find the first (highest) declaration of the variable 
 			if ((*iter)->variableExists(thisName)) {return (*iter)->getData(thisName, purgeTransient);}

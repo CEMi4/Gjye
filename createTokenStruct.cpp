@@ -73,7 +73,7 @@ void prepareTokenInput(EnviroWrap * environment, TokenGroup * tGroup, std::strin
 	//// 
 	
 	for (unsigned int mIndex = 0; mIndex < input->length(); ++mIndex) { // strip out all numbers, replacing as vars 
-		if (isdigit(input->at(mIndex)) > 0) { // numbers (to vars) -- leap forward  ---  || input->at(mIndex) == '.' removed bc we MUST have #.# and not .# 
+		if (isdigit(input->at(mIndex)) > 0 && input->at(mIndex) != '«' && input->at(mIndex) != '»') { // numbers (to vars) -- leap forward  ---  || input->at(mIndex) == '.' removed bc we MUST have #.# and not .# 
 			std::string strData = "", tokID = "";
 			unsigned int numberEnd;
 			
