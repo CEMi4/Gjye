@@ -204,6 +204,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 	
 	std::vector<std::string> tVecVocab, tVecParams, tVecTypes;
 	
+	
 	while (catalystCpy.find('«') != std::string::npos && catalystCpy.find('»',catalystCpy.find('«')) != std::string::npos) {
 		bool isOperator = false;
 		std::string tokID = "", levelType = "ValueOf", levelData = "", postfixFuncData = "";
@@ -221,6 +222,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 		tokID = tGroup->getData(tokArry[0],tokArry[1]);
 		
 		if (tokID.length() == 0) {std::cout << "ERROR: Empty token: " << tokArry[0] << "¬" << tokArry[1] <<std::endl;exit(1);} // the token has nothing in it!!
+		
 		
 		if (tokID.at(0) == '{' && tokID.at(tokID.length()-1) == '}') { // catch generic block declarations
 			std::string blockData = tokID.substr(1,tokID.length()-2); // look ma, no braces!
@@ -283,7 +285,6 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 			levelData = tokID.substr(oPar+1,cPar-oPar-1);
 		}
 		else {
-		
 			unsigned int tmp = 0;
 			while (  tmp+1 < tokID.length() && (tmp = tokID.find_first_of("&|",tmp+1)) != std::string::npos && tmp+1 < tokID.length() && tokID.at(tmp+1) != tokID.at(tmp) ) // get the && and || operators (after position 0) 
 				++tmp;
@@ -358,6 +359,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				
 				// BUILD THE BLOCK THAT WE'RE EXECUTING // 
 				std::string blockData; 
+				BlockWrap * tempBlock = NULL;
 				
 				if (tokIDSub.find('«') != std::string::npos && tokIDSub.find('»',tokIDSub.find('«')) != std::string::npos) { // take care of sublevels
 					std::string tokID, tokVal;
@@ -372,11 +374,9 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 					
 					if ( tokVal.at(0) == '{' && tokVal.at(tokVal.length()-1) == '}' ) {
 						blockData = tokVal.substr(1,tokVal.length()-2);  // look ma, no braces!
-					} else blockData =  tokVal;
-					
-				} else blockData =  tokIDSub;
-				BlockWrap * tempBlock = NULL;
-				tempBlock = new BlockWrap(blockData, environment);
+						tempBlock = new BlockWrap(blockData, environment);
+					}
+				}
 				// END BUILD BLOCK // 
 				
 				
@@ -384,8 +384,10 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 				while ( (int) tools::stringToInt( ifReturnValue ) != 0 ) {
 					if (tempBlock != NULL) {
 						returnValue = tempBlock->executeCode(); // note: RAW data is returned here, so it must be treated below!  
+					} else {
+						returnValue = runTokenStruct(environment,tGroup,tokIDSub);
+						returnValue = tools::prepareVectorData( &environment->dataStructure, returnValue ); // retrieve expression value
 					}
-					// END HANDLE EXPR //
 					
 					
 					// CHECK IF CONDITION STILL TRUE // 
@@ -396,6 +398,7 @@ std::string runTokenStruct(EnviroWrap * environment, TokenGroup * tGroup, std::s
 					if ( !tools::isInteger( ifReturnValue ) ) {std::cout << "CRITERROR :: Malformation: While expression (non-numeric)" <<std::endl;exit(1);}
 					// DONE CHECK // 
 				}
+				// END HANDLE EXPR //
 				
 				std::string tokenQualifier = environment->dataStructure.variableReferencer("_STRING_"); // save the return value to a temp value, then return THAT 
 				environment->dataStructure.addVariable(tokenQualifier,returnValue, -1, true);

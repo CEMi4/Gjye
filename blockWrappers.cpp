@@ -94,7 +94,7 @@
 			}
 		}
 		
-		returnValue = tools::prepareVectorData( &this->environment->dataStructure, returnValue, false );
+		returnValue = tools::prepareVectorData( &this->environment->dataStructure, returnValue );
 		
 		if (tGroup != NULL) delete tGroup;
 		
