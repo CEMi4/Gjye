@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "miscTools.h"
 #include "varStorage.h"
